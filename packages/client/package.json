@@ -1,0 +1,21 @@
+{
+  "name": "@meeplit/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/main.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "konva": "^10.0.12",
+    "vite": "^5.0.0",
+    "vue": "^3.0.0",
+    "json-rpc-2.0": "^1.7.1"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}
