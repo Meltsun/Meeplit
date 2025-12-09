@@ -28,7 +28,7 @@ export interface BufferedController<T> {
 // 调用浏览器对象的stub，用法相同，只是：
 // 1. 只能调用函数，不能取值
 // 2. 所有调用均返回 Promise
-export type ReverseRpcStub<T> = RPCify<T> & {
+type ReverseRpcStub<T> = RPCify<T> & {
 	buffered: BufferedController<T>;
 };
 

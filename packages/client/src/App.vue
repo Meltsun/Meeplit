@@ -8,9 +8,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import {startReverseRPCServer} from './reverse-rpc-server';
+import {ExposeToServer as exposeToServer} from './reverse-rpc-server';
 
-startReverseRPCServer("ws://localhost:" + import.meta.env.VITE_WS_PORT,{
+exposeToServer("ws://localhost:" + import.meta.env.VITE_WS_PORT,{
   log : (msg: string) => {
     console.log("[Reverse RPC]", msg);
     return "ok"

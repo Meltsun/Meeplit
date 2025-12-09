@@ -3,7 +3,7 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
-import { createClientStub } from "./src/revers-rpc-client";
+import { createBrowserObjectStub } from "./src/revers-rpc-client";
 import type {ReverseRpcStub} from "./src/revers-rpc-client";
 
 
@@ -43,7 +43,7 @@ let stub:undefined|ReverseRpcStub<Console>;
 
 socketio_server.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
-  stub = createClientStub<Console>(socket);  
+  stub = createBrowserObjectStub<Console>(socket);  
   await stub.log("success")
   console.log("success")
 });
