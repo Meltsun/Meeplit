@@ -44,6 +44,10 @@ let stub:undefined|ReverseRpcStub<Console>;
 socketio_server.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
   stub = createBrowserObjectStub<Console>(socket);  
-  await stub.log("success")
-  console.log("success")
+  
+  stub.buffered.proxy.log("Hello from server - buffered 1");
+  stub.buffered.proxy.log("Hello from server - buffered 2");
+  stub.buffered.proxy.log("Hello from server - buffered 3");
+  stub.buffered.proxy.log("Hello from server - buffered 4");
+  console.log(await stub.buffered.flushAll())
 });

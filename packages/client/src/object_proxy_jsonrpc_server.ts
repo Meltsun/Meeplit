@@ -21,7 +21,7 @@ import type {
 
 export type JSONRPCResponsePromise = PromiseLike<JSONRPCResponse | null>;
 
-export interface DynamicJSONRPCServerOptions extends JSONRPCServerOptions {
+export interface ObjectProxyJSONRPCServerOptions extends JSONRPCServerOptions {
     delimiter?: string;
     blacklist?: string[];
 }
@@ -110,7 +110,7 @@ const isTraversableObject = (value: any): value is Record<string, any> | Functio
     return (t === "object" || t === "function") && value !== null;
 };
 
-export class DynamicJSONRPCServer<
+export class ObjectProxyJSONRPCServer<
     ServerParams = void,
     T extends Record<string, any> = Record<string, any>
 > {
@@ -125,7 +125,7 @@ export class DynamicJSONRPCServer<
         error: any
     ) => JSONRPCErrorResponse = defaultMapErrorToJSONRPCErrorResponse;
 
-    constructor(target: T, options: DynamicJSONRPCServerOptions = {}) {
+    constructor(target: T, options: ObjectProxyJSONRPCServerOptions = {}) {
         this.target = target;
         // 支持点分路径（可配置分隔符）以启用 stub.a.b.c() 调用
         this.delimiter = options.delimiter ?? ".";
