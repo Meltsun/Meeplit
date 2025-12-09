@@ -23,6 +23,31 @@ export function startReverseRPCServer<T extends Record<string, any>>(
         });
     }
 
+    // 注册批量调用接口：接收 [{method, params}] 的数组，按序执行并返回每个调用的结果或错误
+    server.addMethod("reverse-rpc-batch", async (calls?: unknown) => {
+        if (!Array.isArray(calls)) throw new Error("reverse-rpc-batch expects an array");
+        const results: Array<{ ok: boolean; result?: any; error?: any }> = [];
+        let idCounter = 0;
+        for (const c of calls as any[]) {
+            try {
+                const method = c?.method;
+                const params = Array.isArray(c?.params) ? c.params : c?.params === undefined ? [] : [c.params];
+                const req = { jsonrpc: "2.0", method, params, id: `batch-${++idCounter}` };
+                const res = await server.receive(req as any);
+                if (res && typeof res === "object") {
+                    if ("result" in res) results.push({ ok: true, result: (res as any).result });
+                    else results.push({ ok: false, error: (res as any).error });
+                } else {
+                    // 没有返回（通知或无响应）视为 undefined 结果
+                    results.push({ ok: true, result: undefined });
+                }
+            } catch (err) {
+                results.push({ ok: false, error: err });
+            }
+        }
+        return results;
+    });
+
     socket.on("json-rpc", async (data: any) => {
         try {
             if (data && typeof data === "object" && "method" in data) {
@@ -35,7 +60,4 @@ export function startReverseRPCServer<T extends Record<string, any>>(
             console.error("reverse-rpc client socket handler error:", err);
         }
     });
-
-    // 连接成功后通知服务端已就绪
-    socket.emit("reverse-rpc-ready");
 }
