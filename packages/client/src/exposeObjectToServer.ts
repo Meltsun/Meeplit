@@ -1,10 +1,10 @@
 import { io, Socket } from "socket.io-client";
-import { ObjectProxyJSONRPCServer } from "./object_proxy_jsonrpc_server";
+import { ObjectProxyJSONRPCServer } from "./objectProxyJsonrpcServer";
 
 // 通过 socket.io 建立与服务端的连接，并把 `obj` 的方法注册到 JSON-RPC server 上。
 // 连接建立并且暴露方法后，客户端会向服务端发送一次 `reverse-rpc-ready` 事件表示就绪。
 // 返回一个 Promise，当就绪或连接失败/超时时 resolve/reject。该函数不会把 socket 对象暴露给外部。
-export function expose_to_server<T extends Record<string, any>>(
+export function exposeObjectToServer<T extends Record<string, any>>(
     url: string,
     obj: T,
 ): void {

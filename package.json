@@ -10,6 +10,5 @@
     "dev:client": "vite --config packages/client/vite.config.ts",
     "dev": "echo 'Run server and client separately: `bun ./packages/server/main.ts` and start the client via Vite'"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

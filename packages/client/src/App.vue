@@ -8,9 +8,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import {expose_to_server} from './expose_to_server';
+import {exposeObjectToServer} from './exposeObjectToServer';
 
-expose_to_server("ws://localhost:" + import.meta.env.VITE_WS_PORT,{
+exposeObjectToServer("ws://localhost:" + import.meta.env.VITE_WS_PORT,{
   log : (msg: string) => {
     console.log("[Reverse RPC]", msg);
     return "ok"

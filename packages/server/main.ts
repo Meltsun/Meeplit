@@ -3,13 +3,12 @@ import { Server as Engine } from "@socket.io/bun-engine";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
-import { createBrowserObjectStub } from "./src/revers-rpc-client";
-import type {ReverseRpcStub} from "./src/revers-rpc-client";
+import {BrowserObjectCallServer } from "./src/browserObjectCallServer";
 
 
 console.log('Server will bind WS on', WS_HOST, WS_PORT, 'ws-url', WS_URL);
 
-const socketio_server = new Server();
+const socketioServer = new Server();
 const engine = new Engine({
   cors: {
     origin: CLIENT_ORIGIN,
@@ -19,14 +18,14 @@ const engine = new Engine({
   },
 });
 
-socketio_server.bind(engine);
+socketioServer.bind(engine);
 
 const app = new Hono();
 
 app.use('*', cors());
 
 const { websocket } = engine.handler();
-const server = Bun.serve({
+const bunServer = Bun.serve({
   port: WS_PORT,
   idleTimeout: 30,
   fetch(req:Request, server:Bun.Server<any>) {
@@ -39,15 +38,18 @@ const server = Bun.serve({
   websocket
 });
 
-let stub:undefined|ReverseRpcStub<Console>;
+let browserConsoleServer:undefined|BrowserObjectCallServer<Console>;
 
-socketio_server.on("connection", async (socket) => {
+socketioServer.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
-  stub = createBrowserObjectStub<Console>(socket);  
+  browserConsoleServer = new BrowserObjectCallServer<Console>(socket);  
   
-  stub.buffered.proxy.log("Hello from server - buffered 1");
-  stub.buffered.proxy.log("Hello from server - buffered 2");
-  stub.buffered.proxy.log("Hello from server - buffered 3");
-  stub.buffered.proxy.log("Hello from server - buffered 4");
-  console.log(await stub.buffered.flushAll())
+  browserConsoleServer.stub_buffered.log("Hello from server - buffered 1");
+  browserConsoleServer.stub_buffered.log("Hello from server - buffered 2");
+  browserConsoleServer.stub_buffered.log("Hello from server - buffered 3");
+  browserConsoleServer.stub_buffered.log("Hello from server - buffered 4");
+  console.log("not yet flushed buffered logs");
+
+  let a = (await browserConsoleServer.flushAll())
+  console.log("Flushed all buffered logs:", a);
 });
