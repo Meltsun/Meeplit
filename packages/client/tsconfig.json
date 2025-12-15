@@ -16,5 +16,5 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "vite.config.ts"
-  ]
+, "../call-browser-rpc/server.ts"  ]
 }

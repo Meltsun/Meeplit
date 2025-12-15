@@ -6,7 +6,7 @@ export interface ObjectProxyJSONRPCServerOptions extends JSONRPCServerOptions {
 }
 const defaultBlacklist = ["__proto__", "prototype", "constructor"];
 
-export class ObjectProxyJSONRPCServer<
+export class CallBrowserRpcServer<
     ServerParams = void,
     T extends Record<string, any> = Record<string, any>
 > extends JSONRPCServer<ServerParams> {

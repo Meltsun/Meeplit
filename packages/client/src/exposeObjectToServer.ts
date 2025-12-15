@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { ObjectProxyJSONRPCServer } from "./objectProxyJsonrpcServer";
+import { CallBrowserRpcServer } from "../../call-browser-rpc/server";
 
 // 通过 socket.io 建立与服务端的连接，并把 `obj` 的方法注册到 JSON-RPC server 上。
 // 连接建立并且暴露方法后，客户端会向服务端发送一次 `reverse-rpc-ready` 事件表示就绪。
@@ -10,7 +10,7 @@ export function exposeObjectToServer<T extends Record<string, any>>(
 ): void {
     const socket: Socket = io(url);
 
-    const server = new ObjectProxyJSONRPCServer(obj);
+    const server = new CallBrowserRpcServer(obj);
 
     socket.on("json-rpc", async (data: any) => {
         try {

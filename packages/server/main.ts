@@ -5,7 +5,6 @@ import { cors } from "hono/cors";
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
 import {BrowserObjectCallServer } from "./src/browserObjectCallServer";
 
-
 console.log('Server will bind WS on', WS_HOST, WS_PORT, 'ws-url', WS_URL);
 
 const socketioServer = new Server();
@@ -40,16 +39,21 @@ const bunServer = Bun.serve({
 
 let browserConsoleServer:undefined|BrowserObjectCallServer<Console>;
 
+class Test{
+  test(){
+    return 1
+  }
+}
+
 socketioServer.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
   browserConsoleServer = new BrowserObjectCallServer<Console>(socket);  
   
-  browserConsoleServer.stub_buffered.log("Hello from server - buffered 1");
-  browserConsoleServer.stub_buffered.log("Hello from server - buffered 2");
-  browserConsoleServer.stub_buffered.log("Hello from server - buffered 3");
-  browserConsoleServer.stub_buffered.log("Hello from server - buffered 4");
+  let queue = [
+    browserConsoleServer.stub_noEmit.log("Hello from server - buffered 1"),
+    browserConsoleServer.stub_noEmit.log("Hello from server - buffered 2"),
+    browserConsoleServer.stub_noEmit.log("Hello from server - buffered 3"),
+    browserConsoleServer.stub_noEmit.log("Hello from server - buffered 4"),
+  ]
   console.log("not yet flushed buffered logs");
-
-  let a = (await browserConsoleServer.flushAll())
-  console.log("Flushed all buffered logs:", a);
 });
