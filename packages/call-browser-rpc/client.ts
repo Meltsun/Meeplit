@@ -29,14 +29,14 @@ export class CallBrowserRpcClient<T extends Record<string, any>> extends JSONRPC
         this.stub = this.makeStub([]) as RPCify<T>;
     }
 
-    // flushAll: 发送批量请求到浏览器端，返回结果数组
+    // OrderedBatch: 发射有序批量方法
     async OrderedBatch(queue: Array<RpcRequest>):Promise<JSONRPCResponse[]>{
         if (queue.length === 0) return [];
         let res:JSONRPCResponse[] = await this.request("rpc.buffered", queue);
         return res;
     }
 
-    // buffered proxy：递归生成，调用时入队（方法名带前导点）
+    // NoEmitStub：递归生成，不发射只返回描述符
     private makeNoEmitStub(path: string[]): any {
         const fnTarget = function () { /* callable for apply trap */ };
         return new Proxy(fnTarget, {
@@ -55,7 +55,7 @@ export class CallBrowserRpcClient<T extends Record<string, any>> extends JSONRPC
         });
     }
 
-    // 正常调用 proxy：递归生成，调用时直接请求（方法名带前导点）
+    // 正常stub：递归生成，调用时直接请求（方法名带前导点）
     private makeStub(path: string[]): any {
         const fnTarget = function () { /* callable for apply trap */ };
         return new Proxy(fnTarget, {
