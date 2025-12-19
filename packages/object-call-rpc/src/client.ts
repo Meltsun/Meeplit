@@ -1,6 +1,8 @@
 import { JSONRPCClient} from "json-rpc-2.0";
 import type {CreateID, JSONRPCResponse, SendRequest} from "json-rpc-2.0";
 
+export type { JSONRPCResponse } from "json-rpc-2.0";
+
 // 递归将方法转为 Promise 形式，支持 stub.a.b.c()
 export type RPCify<T> = T extends (...args: infer A) => infer R
 	? (...args: A) => Promise<Awaited<R>>
@@ -20,7 +22,7 @@ export type RpcRequest<T extends any[] = any[]> = {
 	params: T;
 };
 
-export class CallBrowserRpcClient<T extends Record<string, any>> extends JSONRPCClient{
+export class ObjectCallRPCClient<T extends Record<string, any>> extends JSONRPCClient{
     public readonly stub_noEmit: RPCify_noEmit<T>;
     public readonly stub: RPCify<T>;
     constructor(_send: SendRequest<void>, createID?: CreateID | undefined){
@@ -29,8 +31,8 @@ export class CallBrowserRpcClient<T extends Record<string, any>> extends JSONRPC
         this.stub = this.makeStub([]) as RPCify<T>;
     }
 
-    // OrderedBatch: 发射有序批量方法
-    async OrderedBatch(queue: Array<RpcRequest>):Promise<JSONRPCResponse[]>{
+    // requestSequence: 发射有序批量方法
+    async requestSequence(queue: Array<RpcRequest>):Promise<JSONRPCResponse[]>{
         if (queue.length === 0) return [];
         let res:JSONRPCResponse[] = await this.request("rpc.buffered", queue);
         return res;

@@ -7,12 +7,5 @@
       "bun-types" // add Bun global
     ]
   },
-    "references": [
-        {
-            "path": "../client"
-        },
-        {
-            "path": "../object-call-rpc"
-        }
-    ]
+  "include": ["vite.config.ts"]
 }

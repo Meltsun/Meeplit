@@ -1,16 +1,14 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@meeplit/client": ["packages/client/src"],
-      "@meeplit/server": ["packages/server/src"]
-    }
-  }
+    "files": [],
+    "references": [
+        {
+            "path": "packages/client"
+        },
+        {
+            "path": "packages/server"
+        },
+        {
+            "path": "packages/object-call-rpc"
+        }
+    ]
 }

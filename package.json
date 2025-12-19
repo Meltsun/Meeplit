@@ -6,9 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:server": "bun ./packages/server/main.ts",
-    "dev:client": "vite --config packages/client/vite.config.ts",
-    "dev": "echo 'Run server and client separately: `bun ./packages/server/main.ts` and start the client via Vite'"
+    "s": "bun ./packages/server/main.ts",
+    "c": "vite --config packages/client/vite.config.ts"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "typescript": "^5.9.3"
+  }
 }

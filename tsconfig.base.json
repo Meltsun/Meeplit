@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    /* 基础 */
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+
+    /* Monorepo */
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    
+    /* 类型体验 */
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noImplicitOverride": true,
+    "sourceMap": true,
+    "jsx": "preserve",
+    "allowImportingTsExtensions": false,
+    
+    /* 路径别名（重点） */
+    "baseUrl": ".",
+    "paths": {
+      "@meeplit/client": ["packages/client/src"],
+      "@meeplit/server": ["packages/server/src"],
+      "@meeplit/object-call-rpc": ["packages/object-call-rpc"],
+    },
+  },
+}

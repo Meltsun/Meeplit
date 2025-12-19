@@ -1,12 +1,12 @@
-import {createJSONRPCErrorResponse, createJSONRPCSuccessResponse, JSONRPCErrorCode, JSONRPCID, JSONRPCParams, JSONRPCRequest, JSONRPCResponse, JSONRPCServer,JSONRPCServerMiddleware, JSONRPCServerMiddlewareNext, JSONRPCServerOptions} from "json-rpc-2.0";
+import {createJSONRPCErrorResponse, JSONRPCErrorCode, JSONRPCParams, JSONRPCRequest, JSONRPCResponse, JSONRPCServer,JSONRPCServerOptions} from "json-rpc-2.0";
 
-export interface ObjectProxyJSONRPCServerOptions extends JSONRPCServerOptions {
+export interface ObjectCallRPCServerOptions extends JSONRPCServerOptions {
     delimiter?: string;
     blacklist?: string[];
 }
 const defaultBlacklist = ["__proto__", "prototype", "constructor"];
 
-export class CallBrowserRpcServer<
+export class ObjectCallRPCServer<
     ServerParams = void,
     T extends Record<string, any> = Record<string, any>
 > extends JSONRPCServer<ServerParams> {
@@ -14,7 +14,7 @@ export class CallBrowserRpcServer<
     private readonly blacklist: Set<string>;
     private target: T;
 
-    constructor(target:T,options:ObjectProxyJSONRPCServerOptions = {}) {
+    constructor(target:T,options:ObjectCallRPCServerOptions = {}) {
         super(options);
         this.target = target;
         this.delimiter = options.delimiter ?? ".";
@@ -26,15 +26,15 @@ export class CallBrowserRpcServer<
         this.addMethod("rpc.buffered", (params, serverParams)=>this.handleBuffered(params, serverParams));
     }
 
-    receive(
+    override receive(
         request: JSONRPCRequest,
         serverParams?: ServerParams
     ): PromiseLike<JSONRPCResponse | null>;
-    receive(
+    override receive(
         request: JSONRPCRequest | JSONRPCRequest[],
         serverParams?: ServerParams
     ): PromiseLike<JSONRPCResponse | JSONRPCResponse[] | null>;
-    receive(
+    override receive(
         request: JSONRPCRequest | JSONRPCRequest[],
         serverParams?: ServerParams
     ): PromiseLike<JSONRPCResponse | JSONRPCResponse[] | null> {
@@ -119,35 +119,20 @@ export class CallBrowserRpcServer<
             .split(this.delimiter)
             .map((s) => s.trim())
             .filter(Boolean);
-
-        if (!segments.length) return null;
-
         let cursor: any = this.target;
-
-        for (let i = 0; i < segments.length; i += 1) {
-            const segment = segments[i];
+        for (const segment of segments) {
             if (this.blacklist.has(segment)) return null;
             if (!isTraversableObject(cursor)) return null;
             if (!Object.prototype.hasOwnProperty.call(cursor, segment)) return null;
-
-            const value = (cursor as any)[segment];
-            const isLast = i === segments.length - 1;
-
-            if (isLast) {
-                if (typeof value === "function") {
-                    return { fn: value, thisArg: cursor };
-                }
-                return null;
-            }
-
-            cursor = value;
+            cursor = (cursor as any)[segment];
         }
 
+        if (segments.length >=1 && typeof cursor === "function") {
+            return { fn: cursor, thisArg: cursor };
+        }
         return null;
     }
 }
-
-
 
 // 仅允许在对象/函数上继续向下取属性，避免 null/基础类型
 const isTraversableObject = (value: any): value is Record<string, any> | Function => {

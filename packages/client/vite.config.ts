@@ -3,17 +3,29 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import tailwindcss from '@tailwindcss/vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  resolve: {
+    preserveSymlinks: true,
+  },
   envDir: resolve(__dirname, '../..'),
   plugins: [
-    vueDevTools(),
     vue(),
+    vueDevTools(),
+    tailwindcss(),
   ],
   root: './packages/client',
   server: {
-    port: 5173
-  }
+    port: 5173,
+  },
+  // 禁止对库进行依赖预打包，这样断点能命中源码而非 .vite/deps 产物
+  build: {
+    sourcemap: true,
+  },
+  esbuild: {
+    sourcemap: true
+  },
 })

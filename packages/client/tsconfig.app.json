@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "ESNext"],
+    "target": "ES2022",
+    "types": ["vite/client"]
+  },
+  "references": [
+    {
+      "path": "../object-call-rpc"
+    },
+  ],
+  "include": [
+    "src/**/*.ts",
+    "**/*.vue",
+  ]
+}
