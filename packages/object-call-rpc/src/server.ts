@@ -4,7 +4,13 @@ export interface ObjectCallRPCServerOptions extends JSONRPCServerOptions {
     delimiter?: string;
     blacklist?: string[];
 }
-const defaultBlacklist = ["__proto__", "prototype", "constructor"];
+const defaultBlacklist = [
+    "__proto__", "prototype", 
+    "constructor",
+    "__defineGetter__","__defineSetter__","__lookupGetter__","__lookupSetter__",
+    "then",
+    "toStringTag"
+];
 
 export class ObjectCallRPCServer<
     ServerParams = void,
@@ -119,17 +125,27 @@ export class ObjectCallRPCServer<
             .split(this.delimiter)
             .map((s) => s.trim())
             .filter(Boolean);
-        let cursor: any = this.target;
-        for (const segment of segments) {
+        
+        let thisArg: any = this.target;
+
+        for (let i = 0; i < segments.length; i += 1) {
+            const segment = segments[i];
             if (this.blacklist.has(segment)) return null;
-            if (!isTraversableObject(cursor)) return null;
-            if (!Object.prototype.hasOwnProperty.call(cursor, segment)) return null;
-            cursor = (cursor as any)[segment];
+            if (!isTraversableObject(thisArg)) return null;
+            if (!(segment in thisArg)) return null;
+
+            const value = (thisArg as any)[segment];
+
+            if (i === segments.length - 1) {
+                if (typeof value === "function") {
+                    return { fn: value, thisArg: thisArg };
+                }
+                return null;
+            }
+
+            thisArg = value;
         }
 
-        if (segments.length >=1 && typeof cursor === "function") {
-            return { fn: cursor, thisArg: cursor };
-        }
         return null;
     }
 }
