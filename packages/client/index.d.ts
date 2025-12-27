@@ -1,1 +1,1 @@
-export type GlobleThis = typeof globalThis
+export type { GameService } from '@/main';

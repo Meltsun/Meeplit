@@ -13,8 +13,8 @@ const defaultBlacklist = [
 ];
 
 export class ObjectCallRPCServer<
+    T extends Record<string, any> = Record<string, any>,
     ServerParams = void,
-    T extends Record<string, any> = Record<string, any>
 > extends JSONRPCServer<ServerParams> {
     private readonly delimiter: string;
     private readonly blacklist: Set<string>;

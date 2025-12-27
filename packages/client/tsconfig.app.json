@@ -3,6 +3,10 @@
   "compilerOptions": {
     "lib": ["DOM", "ESNext"],
     "target": "ES2022",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": ["vite/client"]
   },
   "references": [
@@ -12,6 +16,7 @@
   ],
   "include": [
     "src/**/*.ts",
+    "index.d.ts",
     "**/*.vue",
   ]
 }

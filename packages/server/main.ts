@@ -2,8 +2,11 @@ import { Server } from "socket.io";
 import { Server as Engine } from "@socket.io/bun-engine";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
 import {BrowserObjectCallServer } from "./src/browserObjectCallServer";
+
+import type {GameService} from "@meeplit/client"
 
 console.log('Server will bind WS on', WS_HOST, WS_PORT, 'ws-url', WS_URL);
 
@@ -38,18 +41,25 @@ Bun.serve({
   websocket
 });
 
-let server:undefined|BrowserObjectCallServer<typeof console> = undefined;
+let server!:BrowserObjectCallServer<GameService>;
 
 socketioServer.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
   server = new BrowserObjectCallServer(socket);  
-  
-  let queue = [
-    server.stub_noEmit.log("Hello from server - buffered 1"),
-    server.stub_noEmit.log("Hello from server - buffered 2"),
-    server.stub_noEmit.log("Hello from server - buffered 3"),
-  ]
-
-  const res = await server.requestSequence(queue)
-  console.log(res);
+  test()
 });
+
+async function test() {
+  
+  server.stub.gameInfoService.setGameInfo(
+    "测试11111111111"
+  )
+  await new Promise(resolve=>setTimeout(resolve,5000))
+  server.stub.gameInfoService.setGameInfo(
+    "测试22222222222"
+  )
+  await new Promise(resolve=>setTimeout(resolve,5000))
+  server.stub.gameInfoService.setGameInfo(
+    "测试33333333333"
+  )
+}

@@ -20,7 +20,7 @@
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noImplicitOverride": true,
     "sourceMap": true,
     "jsx": "preserve",

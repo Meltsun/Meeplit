@@ -16,11 +16,11 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 	
 	constructor(socket: Socket) {
 		this.client = new ObjectCallRPCClient((request) => {
-			socket.emit("json-rpc", request);
+			socket.emit("rpc", request);
 			return Promise.resolve();
 		});	
 
-		socket.on("json-rpc", (data: any) => {
+		socket.on("rpc", (data: any) => {
 			try {
 				this.client.receive(data);
 			} catch (err) {
