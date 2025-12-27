@@ -8,16 +8,13 @@ import tailwindcss from '@tailwindcss/vite'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  resolve: {
-    preserveSymlinks: true,
-  },
   envDir: resolve(__dirname, '../..'),
   plugins: [
     vue(),
     vueDevTools(),
     tailwindcss(),
   ],
-  root: './packages/client',
+  root: __dirname,
   server: {
     port: 5173,
   },

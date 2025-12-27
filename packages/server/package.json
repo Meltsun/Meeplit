@@ -5,13 +5,14 @@
   "type": "module",
   "main": "main.ts",
   "dependencies": {
+    "@meeplit/object-call-rpc": "workspace:*",
     "@socket.io/bun-engine": "^0.1.0",
+    "dotenv": "^17.2.3",
     "hono": "^3.0.0",
-    "socket.io": "^4.8.1",
-    "@meeplit/object-call-rpc":"workspace:*"
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/bun": "^1.3.4",
-    "@meeplit/client":"workspace:*"
+    "@meeplit/client": "workspace:*"
   }
 }

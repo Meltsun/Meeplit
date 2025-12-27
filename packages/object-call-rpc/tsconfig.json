@@ -4,5 +4,5 @@
     "lib": ["ESNext"],
     "target": "ESNext"
   },
-  "include": ["**/*.ts", "**/*.js"]
+  "include": ["**/*.ts"]
 }

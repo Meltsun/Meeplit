@@ -8,8 +8,8 @@ const __dirname = dirname(__filename);
 const rootEnv = resolve(__dirname, "../../..", ".env");
 dotenv.config({ path: rootEnv });
 
-export const WS_HOST = process.env.WS_HOST ?? "localhost";
-export const WS_PORT = Number(process.env.WS_PORT ?? 3000);
+export const WS_HOST = process.env.VITE_WS_HOST ?? "localhost";
+export const WS_PORT = Number(process.env.VITE_WS_PORT ?? 3000);
 export const WS_URL = `ws://${WS_HOST}:${WS_PORT}`;
 export const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 

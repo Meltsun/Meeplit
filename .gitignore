@@ -1,2 +1,6 @@
 node_modules
 json-rpc-2.0-src
+dist
+.env
+.DS_Store
+*.log
