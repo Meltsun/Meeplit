@@ -51,15 +51,6 @@ socketioServer.on("connection", async (socket) => {
 
 async function test() {
   
-  server.stub.gameInfoService.setGameInfo(
-    "测试11111111111"
-  )
-  await new Promise(resolve=>setTimeout(resolve,5000))
-  server.stub.gameInfoService.setGameInfo(
-    "测试22222222222"
-  )
-  await new Promise(resolve=>setTimeout(resolve,5000))
-  server.stub.gameInfoService.setGameInfo(
-    "测试33333333333"
-  )
+  let a = server.getStub({timeout:5000,default:"ok"}).gameInfoService.setGameInfo("test-game-info");
+  
 }

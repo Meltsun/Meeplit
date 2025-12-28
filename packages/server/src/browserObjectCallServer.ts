@@ -7,18 +7,24 @@ import type {RPCify, RPCify_noEmit,RpcRequest,JSONRPCResponse } from "@meeplit/o
 // - 提供缓冲调用接口
 export class BrowserObjectCallServer<T extends Record<string, any>> {
 	private readonly client: ObjectCallRPCClient<T>;
-	stub_noEmit: RPCify_noEmit<T>;
-	stub: RPCify<T>;
+	public readonly getStub: ObjectCallRPCClient<T>['getStub'];
 
 	requestSequence(queue: Array<RpcRequest>):Promise<JSONRPCResponse[]>{
 		return this.client.requestSequence(queue)
 	}
 	
 	constructor(socket: Socket) {
-		this.client = new ObjectCallRPCClient((request) => {
-			socket.emit("rpc", request);
-			return Promise.resolve();
-		});	
+		this.client = new ObjectCallRPCClient(
+			(request) => {
+				socket.emit("rpc", request);
+				return Promise.resolve();
+			}, 
+			{
+				emit: true,
+				timeout: 60 * 1000,
+				default: undefined
+			}
+		);	
 
 		socket.on("rpc", (data: any) => {
 			try {
@@ -27,9 +33,7 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 				console.error("reverse-rpc server socket handler error:", err);
 			}
 		});
-		this.stub_noEmit = this.client.stub_noEmit;
-		// stub 会在存在缓冲时触发 flushLast，否则单次调用
-		this.stub = this.client.stub;
+		this.getStub = this.client.getStub.bind(this.client);
 	}
 
 }

@@ -1,5 +1,5 @@
-import { JSONRPCClient} from "json-rpc-2.0";
-import type {CreateID, JSONRPCResponse, SendRequest} from "json-rpc-2.0";
+import { JSONRPCClient,createJSONRPCErrorResponse} from "json-rpc-2.0";
+import type {CreateID, JSONRPCResponse, SendRequest,JSONRPCErrorResponse} from "json-rpc-2.0";
 
 export type { JSONRPCResponse } from "json-rpc-2.0";
 
@@ -22,13 +22,18 @@ export type RpcRequest<T extends any[] = any[]> = {
 	params: T;
 };
 
+export interface StubOptions {
+    emit?: boolean;
+    timeout?: number;
+    default?: any;
+}
+
 export class ObjectCallRPCClient<T extends Record<string, any>> extends JSONRPCClient{
-    public readonly stub_noEmit: RPCify_noEmit<T>;
-    public readonly stub: RPCify<T>;
-    constructor(_send: SendRequest<void>, createID?: CreateID | undefined){
+    private defaultOptions: Required<StubOptions>;
+
+    constructor(_send: SendRequest<void>, defaultOptions: Required<StubOptions>, createID?: CreateID | undefined){
         super(_send, createID);
-        this.stub_noEmit = this.makeNoEmitStub([]) as RPCify_noEmit<T>;
-        this.stub = this.makeStub([]) as RPCify<T>;
+        this.defaultOptions = defaultOptions;
     }
 
     // requestSequence: 发射有序批量方法
@@ -38,38 +43,47 @@ export class ObjectCallRPCClient<T extends Record<string, any>> extends JSONRPCC
         return res;
     }
 
-    // NoEmitStub：递归生成，不发射只返回描述符
-    private makeNoEmitStub(path: string[]): any {
-        const fnTarget = function () { /* callable for apply trap */ };
-        return new Proxy(fnTarget, {
-            get: (_t, prop) => {
-                if (typeof prop !== "string") return undefined;
-                return this.makeNoEmitStub([...path, prop]);
-            },
-            apply: (_t, _thisArg, params) => {
-                if (!path.length) return undefined;
-                const method = `.${path.join(".")}`;
-                return {
-                    method: method,
-                    params: params
-                } as RpcRequest
-            },
-        });
+    public getStub(options: StubOptions & { emit: false }): RPCify_noEmit<T>;
+    public getStub(options?: StubOptions): RPCify<T>;
+    public getStub(options?: StubOptions): RPCify_noEmit<T> | RPCify<T> {
+        const finalOptions = { ...this.defaultOptions, ...options };
+        return this.createStubProxy([], finalOptions);
     }
 
-    // 正常stub：递归生成，调用时直接请求（方法名带前导点）
-    private makeStub(path: string[]): any {
+    private createStubProxy(path: string[], options: Required<StubOptions>): any {
         const fnTarget = function () { /* callable for apply trap */ };
         return new Proxy(fnTarget, {
             get: (_t, prop) => {
                 if (typeof prop !== "string") return undefined;
-                return this.makeStub([...path, prop]);
+                return this.createStubProxy([...path, prop], options);
             },
             apply: (_t, _thisArg, params) => {
                 if (!path.length) return Promise.reject(new Error("Method path is empty"));
                 const method = `.${path.join(".")}`;
-                return this.request(method, params);
+                
+                if (options.emit) {
+                    return this
+                        .timeout(
+                            options.timeout,
+                            (id)=> {
+                                const response =  createJSONRPCErrorResponse(id, -1, "Request timed out")
+                                response.result = options.default;
+                                return response
+                            }
+                        )
+                        .request(method, params);
+                } else {
+                    return {
+                        method: method,
+                        params: params
+                    } as RpcRequest
+                }
             },
         });
     }
+}
+
+
+export interface JSONRPCTimeoutErrorResponse extends JSONRPCErrorResponse {
+    defaultResult: any;
 }
