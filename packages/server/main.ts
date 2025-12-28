@@ -50,7 +50,7 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-  
-  let a = server.getStub({timeout:5000,default:"ok"}).gameInfoService.setGameInfo("test-game-info");
-  
+  await new Promise(resolve=>setTimeout(resolve,5000))
+  let a = await server.getStub({timeout:5000,defaultResult:"ok"}).ping();
+  console.log("setGameInfo result:", a);
 }

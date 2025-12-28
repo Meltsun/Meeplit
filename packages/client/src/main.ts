@@ -11,7 +11,8 @@ app.use(createPinia())
 app.mount('#app')
 
 const gameService={
-    gameInfoService
+    gameInfoService,
+    ping:()=>"pong"
 }
 
 export type GameService=typeof gameService

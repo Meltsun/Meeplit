@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
 import {ObjectCallRPCClient} from "@meeplit/object-call-rpc";
-import type {RPCify, RPCify_noEmit,RpcRequest,JSONRPCResponse } from "@meeplit/object-call-rpc";
+import type {RpcRequest,JSONRPCResponse } from "@meeplit/object-call-rpc";
 
 // 调用浏览器对象的 stub：
 // - 方法名现在带前导点（.a.b.c）以匹配对象路径
@@ -19,12 +19,9 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 				socket.emit("rpc", request);
 				return Promise.resolve();
 			}, 
-			{
-				emit: true,
-				timeout: 60 * 1000,
-				default: undefined
-			}
-		);	
+			60 * 1000,
+			undefined
+		);
 
 		socket.on("rpc", (data: any) => {
 			try {
