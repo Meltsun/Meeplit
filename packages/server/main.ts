@@ -40,8 +40,9 @@ Bun.serve({
   },
   websocket
 });
-
 let server!:BrowserObjectCallServer<GameService>;
+
+export default server
 
 socketioServer.on("connection", async (socket) => {
   console.log("Reverse RPC client connected", socket.id);
@@ -50,7 +51,8 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-  await new Promise(resolve=>setTimeout(resolve,5000))
-  let a = await server.getStub({timeout:5000,defaultResult:"ok"}).ping();
+  let a:any = await server.getStub({timeout:5000,defaultResult:"ok"}).ping();
   console.log("setGameInfo result:", a);
+  a=await server.getStub().inputTestService.askForInput("请输入测试内容：")
+  console.log("askForInput finished",a)
 }

@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import Game from '@/game/Game.vue'
 import '@/main.css'
 import {gameInfoService} from '@/game/gameInfo/GameInfoService'
+import { inputTestService } from '@/game/inputTest/inputTestService'
 import { GameManager } from '@/game/GameManager';
 
 const app = createApp(Game)
@@ -12,6 +13,7 @@ app.mount('#app')
 
 const gameService={
     gameInfoService,
+    inputTestService,
     ping:()=>"pong"
 }
 
