@@ -17,7 +17,6 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 		this.client = new ObjectCallRPCClient(
 			(request) => {
 				socket.emit("rpc", request);
-				return Promise.resolve();
 			}, 
 			60 * 1000,
 			undefined
@@ -32,7 +31,6 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 		});
 		this.getStub = this.client.getStub.bind(this.client);
 	}
-
 }
 
 

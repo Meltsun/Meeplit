@@ -53,6 +53,6 @@ socketioServer.on("connection", async (socket) => {
 async function test() {
   let a:any = await server.getStub({timeout:5000,defaultResult:"ok"}).ping();
   console.log("setGameInfo result:", a);
-  a=await server.getStub().inputTestService.askForInput("请输入测试内容：")
+  a=await server.getStub({defaultResult:'ok'}).inputTestService.askForInput("服务器请求输入")
   console.log("askForInput finished",a)
 }

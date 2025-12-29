@@ -1,4 +1,4 @@
-import { defineComponent, ref } from "vue";
+import { defineComponent,ref} from "vue";
 
 export interface InputTestModalProps {
     prompt: string;
@@ -6,14 +6,14 @@ export interface InputTestModalProps {
     onCancel: () => void;
 }
 
-const InputTestModal = defineComponent<InputTestModalProps>({
-    name: "InputTestModal",
-    props: {
-        prompt: { type: String, required: true },
-        onSubmit: { type: Function, required: true },
-        onCancel: { type: Function, required: true },
-    },
-    setup(props) {
+const InputTestModal = defineComponent(
+    (
+        props: {
+            prompt: String,
+            onSubmit: Function, 
+            onCancel: Function,
+        }
+    ) => {
         const inputValue = ref("");
 
         const submit = () => props.onSubmit(inputValue.value);
@@ -28,7 +28,7 @@ const InputTestModal = defineComponent<InputTestModalProps>({
             if (e.key === "Enter") submit();
         };
 
-        return () => (
+        return ()=>(
             <div class="fixed inset-0 bg-black/50 flex items-center justify-center">
                 <div class="bg-white p-4 space-y-2">
                     <div>玩家输入</div>
@@ -45,8 +45,8 @@ const InputTestModal = defineComponent<InputTestModalProps>({
                     </div>
                 </div>
             </div>
-        );
-    },
-});
+        )
+    }
+);
 
 export default InputTestModal;

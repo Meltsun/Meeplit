@@ -29,6 +29,7 @@ export class GameManager{
         const server = new ObjectCallRPCServer(this.target);
         this.socket.on("rpc", async (data: any) => {
             try {
+                console.log("reverse-rpc client received data:", data);
                 const response = await server.receive(data);
                 if (response) this.socket.emit("rpc", response);
             } catch (err) {

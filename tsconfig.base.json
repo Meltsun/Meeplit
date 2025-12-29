@@ -24,8 +24,8 @@
     "noImplicitOverride": true,
     "sourceMap": true,
     "jsx": "preserve",
-    "allowImportingTsExtensions": false,
     "jsxImportSource": "vue",
+    "allowImportingTsExtensions": false,
     /* 路径别名（重点） */
     "baseUrl": ".",
     "paths": {

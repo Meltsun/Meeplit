@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Layout from './Layout.vue';
 import GameInfo from '@/game/gameInfo/GameInfo.vue'
+import InputTest2Modal from '@/game/inputTest2/InputTestModal.vue'
 
 </script>
 
@@ -8,6 +9,7 @@ import GameInfo from '@/game/gameInfo/GameInfo.vue'
     <Layout>
         <template #gameInfo>
             <GameInfo />
+            <InputTest2Modal />
         </template>
     </Layout>
 </template>

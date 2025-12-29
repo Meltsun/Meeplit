@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueJsx from '@vitejs/plugin-vue-jsx'
+import VueJsxVapor from 'vue-jsx-vapor/vite'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import vueDevTools from 'vite-plugin-vue-devtools'
@@ -12,7 +12,10 @@ export default defineConfig({
   envDir: resolve(__dirname, '../..'),
   plugins: [
     vue(),
-    vueJsx(),
+    VueJsxVapor({
+      interop: true,
+      macros: true,
+    }),
     vueDevTools(),
     tailwindcss(),
   ],
