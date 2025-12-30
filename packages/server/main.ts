@@ -51,8 +51,14 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-  let a:any = await server.getStub({timeout:5000,defaultResult:"ok"}).ping();
-  console.log("setGameInfo result:", a);
-  a=await server.getStub({defaultResult:'ok'}).inputTestService.askForInput("服务器请求输入")
-  console.log("askForInput finished",a)
+  let s = server.getStub({timeout:5000,defaultResult:"no answer",emit:true})
+  await s.setGameInfo({text:"324243234"})
+  while(true){
+    console.log(await s.ask({
+      prompt:"测试测试",
+      choices:["选项一","选项二","选项三"],
+      defaultChoiceIndex:-1
+    }))
+    await new Promise(res=>setTimeout(res,3000) )
+  }
 }
