@@ -56,7 +56,8 @@ async function test() {
   while(true){
     console.log(await s.ask({
       prompt:"测试测试",
-      choices:["选项一","选项二","选项三"],
+      choices:["选项一","选项二","选项三","选项四"],
+      columns:2,
       defaultChoiceIndex:-1
     }))
     await new Promise(res=>setTimeout(res,3000) )

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef,ShallowRef } from 'vue';
+import { ref, useTemplateRef,ShallowRef,onUnmounted} from 'vue';
 
 import Layout from './Layout.vue';
 import GameInfo from '@/game/GameInfo.vue'
@@ -28,6 +28,10 @@ const manager = new GameManager(
     `ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`,
     gameService
 );
+
+onUnmounted(()=>{
+    manager.disconnect();
+});
 
 </script>
 

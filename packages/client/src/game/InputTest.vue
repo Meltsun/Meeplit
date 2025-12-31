@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { child, computed, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 type Resolver = (value: string) => void;
 
@@ -23,8 +23,6 @@ defineExpose({
         if (pendingResolve.value) {
             throw new Error('Input request already in progress');
         }
-        console.log('getInput called with options:', options);
-
         const { prompt, choices, columns=choices.length, timeout, defaultChoiceIndex} = options;
         promptText.value = prompt;
         choicesRef.value = choices;

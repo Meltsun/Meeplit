@@ -4,13 +4,13 @@ export type { JSONRPCResponse } from "json-rpc-2.0";
 
 // 在首参数为对象时，增加可选 timeout，便于传递超时设置
 
-type MakeTimeoutOptional<T> =
-  'timeout' extends keyof T
-    ? Omit<T, 'timeout'> & Partial<Pick<T, 'timeout'>>
+type MakeOptional<T, K extends PropertyKey> =
+  K extends keyof T
+    ? Omit<T, K> & Partial<Pick<T, K>>
     : T
 
 type MakeFirstParamsTimeoutOptional<A extends any[]> = A extends [infer F, ...infer R]
-    ? F extends object ? [MakeTimeoutOptional<F>, ...R] : A
+    ? F extends object ? [MakeOptional<F,'timeout'>, ...R] : A
     : A;
 
 // RPC stub，相比原类型没有属性，所有方法都返回 Promise
