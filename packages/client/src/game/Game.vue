@@ -26,8 +26,8 @@ const gameService={
 export type GameService = typeof gameService;
 const manager = new GameManager(
     `ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`,
-    gameService
 );
+manager.exposeRpcObject(gameService);
 
 onUnmounted(()=>{
     manager.disconnect();

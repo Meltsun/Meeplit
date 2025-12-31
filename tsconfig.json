@@ -8,7 +8,7 @@
             "path": "packages/server"
         },
         {
-            "path": "packages/object-call-rpc"
+            "path": "packages/shared"
         }
     ]
 }

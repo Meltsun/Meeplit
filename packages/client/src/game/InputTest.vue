@@ -23,7 +23,8 @@ defineExpose({
         if (pendingResolve.value) {
             throw new Error('Input request already in progress');
         }
-        const { prompt, choices, columns=choices.length, timeout, defaultChoiceIndex} = options;
+        const { prompt, choices, timeout, defaultChoiceIndex} = options;
+        const columns = options.columns ?? choices.length;
         promptText.value = prompt;
         choicesRef.value = choices;
         columnsRef.value = Math.max(1, columns);

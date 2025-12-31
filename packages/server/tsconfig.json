@@ -12,7 +12,7 @@
           "path": "../client"
       },
       {
-          "path": "../object-call-rpc"
+          "path": "../shared"
       }
   ],
   "include": ["**/*.ts"]

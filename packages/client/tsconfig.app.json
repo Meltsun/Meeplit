@@ -11,7 +11,7 @@
   },
   "references": [
     {
-      "path": "../object-call-rpc"
+      "path": "../shared"
     },
   ],
   "include": [

@@ -5,7 +5,7 @@
   "type": "module",
   "main": "main.ts",
   "dependencies": {
-    "@meeplit/object-call-rpc": "workspace:*",
+    "@meeplit/shared": "workspace:*",
     "@socket.io/bun-engine": "^0.1.0",
     "dotenv": "^17.2.3",
     "hono": "^3.0.0",

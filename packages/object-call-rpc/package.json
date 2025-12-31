@@ -1,9 +1,0 @@
-{
-  "name": "@meeplit/object-call-rpc",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "json-rpc-2.0": "^1.7.1"
-  }
-}
