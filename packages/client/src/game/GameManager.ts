@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams} from "@meeplit/shared";
+import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError} from "@meeplit/shared";
 
 export class GameManager{
     private socket: Socket<ServerToClientEvents,ClientToServerEvents>;
@@ -13,9 +13,9 @@ export class GameManager{
     }
 
     exposeRpcObject(target:Record<string, any>): void {
-        this.socket.on("rpc-request", async (req, ack) => {
+        this.socket.on("rpc-call", async (req, ack) => {
             if(ack===undefined || typeof ack !== "function"){
-                console.error(`rpc-request缺少ack ${req}`);
+                console.error(`rpc-call缺少ack ${req}`);
                 return
             }
             try {
@@ -43,18 +43,20 @@ export class GameManager{
     }
 }
 
+// 安全调用方法，捕获异常并返回RpcResponse
 async function safeCallMethod(target:Record<string, any>,req:unknown):Promise<RpcResponse> {
     if(!isRpcRequest(req)){
-        console.warn(`rpc-request缺少ack,按照emit执行`);
+        console.warn(`rpc-call缺少ack,按照emit执行`);
         return RpcResponse.fail(RPCErrorCode.InvalidRequest, `Invalid request: 请求格式错误${req}`)
     }
-    let fn = findMethod(target, req.method);
+    let fn = findMethod(target, req.method) as (...args:any[])=>unknown;
     if(!fn){
         return RpcResponse.fail(RPCErrorCode.MethodNotFound, `Method not found: 找不到方法 ${req.method}`)
     }
     try {
-        const res = await fn(...req.params);
-        return RpcResponse.success(res);
+        let result = await fn(...req.params);
+        if(result === undefined) result = null; // 避免ack丢失
+        return RpcResponse.success(result);
     } catch (e) {
         return RpcResponse.fail(RPCErrorCode.ServiceError, (e as Error).message);
     }
@@ -63,21 +65,22 @@ async function safeCallMethod(target:Record<string, any>,req:unknown):Promise<Rp
 async function batchCall(
     target: Record<string, any>,
     ...params:any[]
-): Promise<RpcResponse<any[]|null>> {
+): Promise<Array<RpcResponse>> {
     if(!isBatchRpcRequests(params)){
-        return RpcResponse.fail(RPCErrorCode.InvalidRequest, `Invalid batch request: 请求格式错误`)
+        throw new RpcError(RPCErrorCode.InvalidRequest,`Invalid batch request: 请求格式错误`)
     }
     const [executionMode, reqs] = params;
     if(executionMode === 'parallel'){
         const promises = reqs.map((req) => safeCallMethod(target, req));
         const results = await Promise.all(promises);
-        return RpcResponse.success(results);
+        return results;
     }else{// sequential
         const results: Array<RpcResponse> = [];
         for (const req of reqs) {
-            results.push(await safeCallMethod(target, req))
+            const res=await safeCallMethod(target, req)
+            results.push(res)
         }
-        return RpcResponse.success(results);
+        return results;
     }
 }
 
@@ -85,7 +88,7 @@ function findMethod(
     target: Record<string, any>,
     methodName: string
 ): Function|null {
-    if(methodName === import.meta.env.VITE_RPC_BATCH){
+    if(methodName === RPC_BATCH_METHOD_NAME){
         return (...params:any[])=>batchCall(target, ...params);
     }
     const segments = methodName

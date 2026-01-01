@@ -54,38 +54,22 @@ socketioServer.on("connection", async (socket) => {
 
 async function test() {
 
-    let s = await server.requestBatch({
+    let s = await server.callBatch({
             executionMode: "sequential",
-            timeout: 10*1000,
-            defaultResult: "选项一"
+            timeout: 99999*1000,
+            defaultResult: "未选择"
         },
         (stub)=>{
-            stub.ask({
-                prompt: "测试1",
-                choices: ["选项一", "选项二", "选项三", "选项四"],
-                defaultChoiceIndex: -1,
-                timeoutMs: 60*1000
-            })
-            stub.setGameInfo("11111111111111111111111111")
+            stub.ping()
+            stub.setGameInfo("13123213")
             return stub.ask({
-                prompt: "测试2",
-                choices: ["选项一", "选项二", "选项三", "选项四"],
-                defaultChoiceIndex: -1,
-                timeoutMs: 60*1000
-            })
+                    prompt:"你是谁？",
+                    choices:["Alice", "Bob", "Charlie"],
+                    timeoutMs:15*1000,
+                    defaultChoiceIndex:0
+                }
+            )
         }
     )
-    console.log("ask 结果",s);
-    server.emitBatch(
-        "parallel",
-        (stub)=>{
-            stub.ask({
-                prompt: "测试1",
-                choices: ["选项一", "选项二", "选项三", "选项四"],
-                defaultChoiceIndex: -1,
-                timeoutMs: 60*1000
-            })
-            stub.setGameInfo("1")
-        }
-    )
+    console.log("结果",s);
 }

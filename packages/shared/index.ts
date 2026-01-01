@@ -1,4 +1,4 @@
-export const RPC_BATCH = 'rpc-batch';
+export const RPC_BATCH_METHOD_NAME = 'rpc-batch';
 
 export enum RPCErrorCode {
     MethodNotFound,	//找不到要调用的方法
@@ -19,9 +19,16 @@ export class RpcError extends Error {
 
 export type BatchRpcquestParams =[ 'sequential' | 'parallel', RpcRequest[] ]
 
-export type RpcRequest<M extends string = string,P extends any[] =any[]> = {
+// Phantom generic R carries the expected return type for type inference only.
+// __return is optional and never used at runtime.
+export type RpcRequest<
+	M extends string = string,
+	P extends any[] = any[],
+	R = unknown
+> = {
 	method: M;
 	params: P;
+	__return?: R;
 };
 
 export type BatchRpcquest = RpcRequest<'rpc-batch',BatchRpcquestParams>;
@@ -45,7 +52,7 @@ export class RpcResponse<R=any>{
 export type BatchRpcResponse= RpcResponse<RpcResponse[]>;
 
 export interface ServerToClientEvents{
-    "rpc-request": (req:RpcRequest,ack:(res:RpcResponse)=>void) => void;
+    "rpc-call": (req:RpcRequest,ack:(res:RpcResponse)=>void) => void;
 	"rpc-emit": (req:RpcRequest) => void;
     "chat": (message: string) => void;
 }

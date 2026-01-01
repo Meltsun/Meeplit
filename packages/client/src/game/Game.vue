@@ -21,6 +21,7 @@ const gameService={
             defaultChoiceIndex:number; 
         }):Promise<string>=>inputTest.value.getInput(options),
     ping:()=> 'pong',
+    noReturnTest:():void=>{},
 }
 
 export type GameService = typeof gameService;
