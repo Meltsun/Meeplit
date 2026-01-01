@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,MultiRpcParams} from "@meeplit/shared";
+import { RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams} from "@meeplit/shared";
 
 export class GameManager{
     private socket: Socket<ServerToClientEvents,ClientToServerEvents>;
@@ -20,7 +20,7 @@ export class GameManager{
             }
             try {
                 const res = await safeCallMethod(target, req);
-                if(res.err) console.error("reverse-rpc error:", res.err.message);
+                if(res.error) console.error("reverse-rpc error:", res.error.message);
                 ack(res);
             } catch (err) {
                 console.error("reverse-rpc client socket handler error:", err);
@@ -31,7 +31,7 @@ export class GameManager{
         this.socket.on("rpc-emit", async (req) => {
             try {
                 const res = await safeCallMethod(target, req);
-                if(res.err) console.error("reverse-rpc error:", res.err.message);
+                if(res.error) console.error("reverse-rpc error:", res.error.message);
             } catch (err) {
                 console.error("reverse-rpc client socket handler error:", err);
             }
@@ -64,7 +64,7 @@ async function batchCall(
     target: Record<string, any>,
     ...params:any[]
 ): Promise<RpcResponse<any[]|null>> {
-    if(!isMultiRpcRequests(params)){
+    if(!isBatchRpcRequests(params)){
         return RpcResponse.fail(RPCErrorCode.InvalidRequest, `Invalid batch request: 请求格式错误`)
     }
     const [executionMode, reqs] = params;
@@ -137,7 +137,7 @@ function isRpcRequest(rpcRequest: unknown):rpcRequest is RpcRequest {
     return true;
 }
 
-function isMultiRpcRequests(params: any[]):params is MultiRpcParams{
+function isBatchRpcRequests(params: any[]):params is BatchRpcquestParams{
     if (params.length!==2) return false;
     if (params[0]!=='sequential' && params[0]!=='parallel') return false;
     if (!Array.isArray(params[1])) return false;

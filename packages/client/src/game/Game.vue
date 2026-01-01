@@ -10,16 +10,16 @@ const gameInfoText = ref('default game info text');
 const inputTest= useTemplateRef('input') as ShallowRef<InstanceType<typeof InputTest>>;
 
 const gameService={
-    setGameInfo: ({text}:{text:string}) => {
+    setGameInfo: (text:string) => {
         gameInfoText.value = text;
     },
     ask:async (options: { 
             prompt: string; 
             choices: string[]; 
-            timeout: number; 
+            timeoutMs: number; 
             columns?: number;
             defaultChoiceIndex:number; 
-        })=>inputTest.value.getInput(options),
+        }):Promise<string>=>inputTest.value.getInput(options),
     ping:()=> 'pong',
 }
 

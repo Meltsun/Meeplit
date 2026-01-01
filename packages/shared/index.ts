@@ -1,3 +1,5 @@
+export const RPC_BATCH = 'rpc-batch';
+
 export enum RPCErrorCode {
     MethodNotFound,	//找不到要调用的方法
     ServiceError,	//处理请求时发生错误
@@ -15,16 +17,19 @@ export class RpcError extends Error {
     }
 }
 
-export type MultiRpcParams =[ 'sequential' | 'parallel', RpcRequest[] ]
-export type RpcRequest = {
-	method: string;
-	params: any[];
+export type BatchRpcquestParams =[ 'sequential' | 'parallel', RpcRequest[] ]
+
+export type RpcRequest<M extends string = string,P extends any[] =any[]> = {
+	method: M;
+	params: P;
 };
+
+export type BatchRpcquest = RpcRequest<'rpc-batch',BatchRpcquestParams>;
 
 export class RpcResponse<R=any>{
 	private constructor(
-		public res:R,
-		public err?:{
+		public result:R,
+		public error?:{
 			code:number,
 			message?:string
 		}
@@ -36,6 +41,8 @@ export class RpcResponse<R=any>{
 		return new RpcResponse(null, {code, message});
 	}
 }
+
+export type BatchRpcResponse= RpcResponse<RpcResponse[]>;
 
 export interface ServerToClientEvents{
     "rpc-request": (req:RpcRequest,ack:(res:RpcResponse)=>void) => void;

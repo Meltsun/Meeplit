@@ -17,13 +17,13 @@ defineExpose({
         prompt: string;
         choices: string[];
         columns?: number;
-        timeout: number;
+        timeoutMs: number;
         defaultChoiceIndex:number;
     }): Promise<string> {
         if (pendingResolve.value) {
             throw new Error('Input request already in progress');
         }
-        const { prompt, choices, timeout, defaultChoiceIndex} = options;
+        const { prompt, choices, timeoutMs: timeout, defaultChoiceIndex} = options;
         const columns = options.columns ?? choices.length;
         promptText.value = prompt;
         choicesRef.value = choices;

@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
-import { ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents } from "@meeplit/shared";
-import { RPC_BATCH } from "./env";
+import { RPC_BATCH,BatchRpcResponse, BatchRpcquest, ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents } from "@meeplit/shared";
+
 // RPC stub，相比原类型没有属性，所有方法都返回 Promise
 export type RPCify_Request<T> = T extends (...args: infer A) => infer R
     ? (...args: A) => Promise<Awaited<R>>
@@ -39,20 +39,44 @@ function createChainCollectorProxy<T>(
 	}) as RPCify<T>
 }
 
+function handleResponse<R,T>(
+	req:RpcRequest,
+	{result ,error }:RpcResponse<R>,
+	defaultResult:T
+):R|T
+{
+	try{
+		if(error) throw new RpcError(error.code,error.message);
+		if(result===undefined) return defaultResult;
+		return result;
+	}catch(e){
+		if (e instanceof Error) {
+			if (e instanceof RpcError) {
+				switch (e.code) {
+					case RPCErrorCode.MethodNotFound:
+						console.warn("方法未找到", req.method);
+						break;
+					case RPCErrorCode.ServiceError:
+						console.warn(`运行Target${req.method}时出现错误`, e.message);
+						break;
+				}
+			}else{
+				console.warn("Socket.io 错误", e.message);
+			}
+		}
+		if (defaultResult) {
+			console.info(`客户端输入超时，使用默认结果返回Target${req.method}`);
+			return defaultResult;
+		}
+		throw e;
+	}
+}
 
 export class BrowserObjectCallServer<T extends Record<string, any>> {
 	constructor(
 		private socket: Socket<ClientToServerEvents,ServerToClientEvents>,
-		private name="Target"
 	){}
 
-	public handleRequest(
-		req:RpcRequest,
-		options:{
-			returnMode:'emit'|'reserve',
-			defaultResult?:any,
-			timeout?:any
-		}):RpcRequest;
 	public handleRequest(
 		req:RpcRequest,
 		options:{
@@ -60,6 +84,13 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 			timeout:any
 			defaultResult?:any,
 		}):Promise<RpcResponse>
+	public handleRequest(
+		req:RpcRequest,
+		options:{
+			returnMode:'emit'|'reserve',
+			defaultResult?:any,
+			timeout?:any
+		}):RpcRequest;
 	public handleRequest(
 		req:RpcRequest,
 		options:{
@@ -75,64 +106,59 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 			return req;
 		} else if(options.returnMode==='request'){
 			return (async()=>{
-				try{
-					const {res,err}:RpcResponse= await this.socket.timeout(options.timeout).emitWithAck("rpc-request",req);
-					if(err) throw new RpcError(err.code,err.message);
-					if(res===undefined) return options.defaultResult;
-					return res;
-				}catch(e){
-					if (e instanceof Error) {
-						if (e instanceof RpcError) {
-							switch (e.code) {
-								case RPCErrorCode.MethodNotFound:
-									console.warn("方法未找到", req.method);
-									break;
-								case RPCErrorCode.ServiceError:
-									console.warn(`运行${this.name}${req.method}时出现错误`, e.message);
-									break;
-							}
-						}else{
-							console.warn("Socket.io 错误", e.message);
-						}
-					}
-					if (options.defaultResult) {
-						console.info(`客户端输入超时，使用默认结果返回 ${this.name}${req.method}`);
-						return options.defaultResult;
-					}
-					throw e;
-				}
+				return handleResponse(req,await this.socket.timeout(options.timeout).emitWithAck("rpc-request",req),options.defaultResult)
 			})()
 		}else{
 			throw new Error(`未知的returnMode ${options.returnMode}`);
 		}
 	}
-
-	public batch(
+	
+	public batchAdvanced<R>(
 		options:{
 			executionMode: 'sequential' | 'parallel',
 			returnMode:'emit'| 'request'|'reserve',
 			defaultResult?:any,
 			timeout?:any,
 		},
-		callback:(stub:RPCify_Reserve<T>)=>any
-	):Promise<RpcResponse>|RpcRequest{
-		if (options.returnMode==='request' && !options.timeout ) throw new Error("request模式必须指定timeout参数");
+		batchCtx:(stub:RPCify_Request<T>)=>Promise<R>|null|void|undefined
+	):BatchRpcquest|Promise<BatchRpcResponse>|Promise<R>{
+		if (options.returnMode==='request' && !options.timeout) throw new Error("request模式必须指定timeout参数");
 		const reqs:RpcRequest[] = [];
 		
 		const batchCallback = (req:RpcRequest) =>{
 			reqs.push(req);
-			return req;
+			const p = Promise.reject(Error("batch模式下不要await stub调用，请直接return调用结果")) as Promise<never> & { __rpcRequest: RpcRequest };
+			p.catch(() => {}); // mark handled to avoid unhandled rejection noise
+			(p as any).__rpcRequest = req;
+			return p;
 		}
-		callback(createChainCollectorProxy([], batchCallback));
-		const req={
+		const markedReq = (batchCtx(createChainCollectorProxy([], batchCallback)) as any).__rpcRequest as RpcRequest
+
+		const batchReq={
 			method: RPC_BATCH,
 			params: [options.executionMode,reqs]
-		} as RpcRequest;
-		
-		return this.handleRequest(req,options as any)
+		} as BatchRpcquest;
+
+		if(options.returnMode==='request'){
+			const result = this.handleRequest(batchReq, options as any) as Promise<BatchRpcResponse>;
+			return (async()=>{
+				const res = await result;
+				if(markedReq){
+					const idx = reqs.indexOf(markedReq);
+					if(idx>=0) return handleResponse(markedReq,res.result[idx],options.defaultResult);
+					throw new Error(
+						"请返回一个发送请求以接收对应结果, 或者返回undefined|void|null以接收全部结果",
+					);
+				}
+				return res.result;
+			})() as Promise<R>;
+		}
+
+		this.handleRequest(batchReq, options as any);
+		return batchReq;
 	}
 
-	public single(
+	public singleAdvanced(
 		options:{
 			returnMode:'emit'| 'request'|'reserve',
 			defaultResult?:any,
@@ -145,13 +171,39 @@ export class BrowserObjectCallServer<T extends Record<string, any>> {
 
 	//直接发送请求，不返回
 	public emit():RPCify_Reserve<T>{
-		return this.single({returnMode:'emit'}) as RPCify_Reserve<T>;
+		return this.singleAdvanced({returnMode:'emit'}) as RPCify_Reserve<T>;
 	}
 
 	//发送请求，等待结果返回；如果defaultResult是真值，且发生超时等异常或返回值为undefined，则返回defaultResult
 	public request(timeout:number,defaultResult:any):RPCify_Request<T>{
-		return this.single({returnMode:'request',timeout,defaultResult}) as RPCify_Request<T>;
+		return this.singleAdvanced({returnMode:'request',timeout,defaultResult}) as RPCify_Request<T>;
     }
+
+	public emitBatch(executionMode: 'sequential' | 'parallel',batchCtx:(stub:RPCify_Request<T>)=>any):RpcRequest{
+		return this.batchAdvanced(
+			{
+				executionMode,
+				returnMode:"emit"
+			},
+			batchCtx
+		) as RpcRequest;
+	}
+
+	public async requestBatch<R>(options:{
+			executionMode: 'sequential' | 'parallel',
+			timeout:number,
+			defaultResult:R
+		},
+		batchCtx:(stub:RPCify_Request<T>)=>Promise<R>
+	):Promise<R>{
+		return this.batchAdvanced(
+			{
+				...options,
+				returnMode:"request"
+			},
+			batchCtx
+		) as Promise<R>;
+	}
 }
 
 

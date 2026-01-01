@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import { Server as Engine } from "@socket.io/bun-engine";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
 import { BrowserObjectCallServer } from "./src/browserObjectCallServer";
@@ -51,18 +53,39 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-    let s = server.request(5000, "no answer")
-    await s.setGameInfo({ text: "324243234" })
-    while (true) {
-        console.log(
-            await s.ask({
-                prompt: "测试测试",
+
+    let s = await server.requestBatch({
+            executionMode: "sequential",
+            timeout: 10*1000,
+            defaultResult: "选项一"
+        },
+        (stub)=>{
+            stub.ask({
+                prompt: "测试1",
                 choices: ["选项一", "选项二", "选项三", "选项四"],
-                columns: 2,
                 defaultChoiceIndex: -1,
-                timeout: 4000
+                timeoutMs: 60*1000
             })
-        )
-        await new Promise(res => setTimeout(res, 3000))
-    }
+            stub.setGameInfo("11111111111111111111111111")
+            return stub.ask({
+                prompt: "测试2",
+                choices: ["选项一", "选项二", "选项三", "选项四"],
+                defaultChoiceIndex: -1,
+                timeoutMs: 60*1000
+            })
+        }
+    )
+    console.log("ask 结果",s);
+    server.emitBatch(
+        "parallel",
+        (stub)=>{
+            stub.ask({
+                prompt: "测试1",
+                choices: ["选项一", "选项二", "选项三", "选项四"],
+                defaultChoiceIndex: -1,
+                timeoutMs: 60*1000
+            })
+            stub.setGameInfo("1")
+        }
+    )
 }
