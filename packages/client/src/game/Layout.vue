@@ -21,7 +21,7 @@ const opponents = computed(() => {
       <aside class="flex-2 flex flex-col gap-2.5 overflow-hidden">
         <section class="flex-1 bg-[#f5f7fb] text-[#0f1d3a] overflow-hidden flex items-center justify-center">
           <slot name="gameInfo">
-            <div>元数据展示占位</div>
+            <div>游戏信息</div>
           </slot>
         </section>
 
@@ -45,10 +45,17 @@ const opponents = computed(() => {
           </div>
         </div>
 
-        <div class="flex-5 bg-[#f0f5ff] text-[#0f1d3a] overflow-hidden flex items-center justify-center">
-          <slot name="board">
-            卡牌显示区域
-          </slot>
+        <div class="flex-5 bg-[#f0f5ff] text-[#0f1d3a] overflow-hidden flex flex-col">
+          <div class="flex-4 flex items-center justify-center">
+            <slot name="board">
+              卡牌显示区域
+            </slot>
+          </div>
+          <div class="flex-1 flex items-center justify-center">
+            <slot name="ask">
+              询问区域
+            </slot>
+          </div>
         </div>
 
         <div class="flex-[2.5] bg-[#e6f7ff] text-[#0f1d3a] overflow-hidden flex items-center justify-center">

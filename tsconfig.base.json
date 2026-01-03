@@ -31,7 +31,7 @@
     "paths": {
       "@meeplit/client": ["packages/client/src"],
       "@meeplit/server": ["packages/server/src"],
-      "@meeplit/shared": ["packages/object-call-rpc"],
+      "@meeplit/shared": ["packages/shared"],
     },
   },
 }

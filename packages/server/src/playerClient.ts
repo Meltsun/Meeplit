@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io";
-import { RPC_BATCH_METHOD_NAME, BatchRpcquest, ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents } from "@meeplit/shared";
+import { RPC_BATCH_METHOD_NAME, BatchRpcquest, ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents } from "@meeplit/shared/rpc";
 
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
@@ -104,7 +104,7 @@ function handleResponse(
 	}
 }
 
-export class BrowserObjectCallServer<T extends Record<string, any>> {
+export class PlayerClient<T extends Record<string, any>> {
 	constructor(
 		private socket: Socket<ClientToServerEvents,ServerToClientEvents>,
 	){}

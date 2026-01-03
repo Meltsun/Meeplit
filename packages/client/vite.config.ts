@@ -26,9 +26,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: Number(process.env.VITE_CLIENT_ORIGIN_PORT),
   },
-  // 禁止对库进行依赖预打包，这样断点能命中源码而非 .vite/deps 产物
   build: {
     sourcemap: true,
   },

@@ -2,5 +2,13 @@
   "name": "@meeplit/shared",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": {
+    "./rpc": {
+      "import": "./rpc.ts"
+    },
+    "./game": {
+      "import": "./game.ts"
+    }
+  }
 }

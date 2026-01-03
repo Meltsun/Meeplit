@@ -1,11 +1,14 @@
 import { io, Socket } from "socket.io-client";
-import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError} from "@meeplit/shared";
+import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError} from "@meeplit/shared/rpc"
 
 export class GameManager{
-    private socket: Socket<ServerToClientEvents,ClientToServerEvents>;
+    private socket!: Socket<ServerToClientEvents,ClientToServerEvents>;
 
-    constructor(url: string){
-        this.socket = io(url);
+
+    constructor(private url: string){}
+
+    public connect(): void {
+        this.socket = io(this.url)
     }
 
     public disconnect(): void {

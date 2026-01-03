@@ -12,7 +12,7 @@ export const WS_HOST = process.env.VITE_WS_HOST ?? "localhost";
 export const WS_PORT = Number(process.env.VITE_WS_PORT ?? 3000);
 
 export const WS_URL = `ws://${WS_HOST}:${WS_PORT}`;
-export const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+export const CLIENT_ORIGIN = process.env.VITE_CLIENT_ORIGIN;
 
 export default { WS_HOST, WS_PORT, WS_URL, CLIENT_ORIGIN };
 
