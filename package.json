@@ -8,7 +8,7 @@
   "scripts": {
     "s": "bun ./packages/server/main.ts",
     "test": "bun ./packages/server/test.ts",
-    "c": "vite --config packages/client/vite.config.ts"
+    "c": "bunx --bun vite --config packages/client/vite.config.ts"
   },
   "dependencies": {
     "typescript": "^5.9.3"

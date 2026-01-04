@@ -57,6 +57,9 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-    server.emit().updateCard(Array(8).fill(Cards.testCard))
-    console.log("结果");
+    let s:any
+    server.emit().updateCard(Array(12).fill(Cards.testCard))
+    server.emit().setGameInfo("选择1张牌")
+    s=await server.call(15000,"超时未选择").playCard({cardnum:1,timeoutMs:10000})
+    console.log(s)
 }

@@ -9,8 +9,11 @@ import {Card} from "@meeplit/shared/game";
 import Player from './Player.vue';
 
 const gameInfoText = ref('default game info text');
+const cards = ref<Card[]>([]);
 const inputTest= useTemplateRef('input') as ShallowRef<InstanceType<typeof InputTest>>;
+const playerRef = useTemplateRef('player') as ShallowRef<InstanceType<typeof Player>>;
 const playerCards = ref<Card[]>([]);
+const maxSelection=ref<number|undefined>(undefined);
 
 const resolveCardImg = (img: string): string => {
     // Prefix host/port when an absolute URL is not provided
@@ -20,9 +23,7 @@ const resolveCardImg = (img: string): string => {
 };
 
 const gameService={
-    setGameInfo: (text:string) => {
-        gameInfoText.value = text;
-    },
+    setGameInfo: (text:string) => gameInfoText.value = text,
     ask:async (options: { 
             prompt: string; 
             choices: string[]; 
@@ -38,7 +39,26 @@ const gameService={
             ...card,
             img: resolveCardImg(card.img),
         }));
-    }
+    },
+    playCard:async (options: { 
+            cardnum:number;
+            timeoutMs: number; 
+        }):Promise<string[]>=>{
+        maxSelection.value = options.cardnum;
+        const isplay = await gameService.ask({
+            prompt:`请选择${options.cardnum}张牌`,
+            choices:['出牌',"取消"],
+            timeoutMs:options.timeoutMs,
+            defaultChoiceIndex:-1,
+        });
+        let res:string[] = []
+        if(isplay==="出牌"){
+            res = playerRef.value?.getSelectedNames() ?? [];
+        }
+        maxSelection.value = 0;
+        return res
+    },
+    getSelectedCards: () => playerRef.value.getSelectedNames() ?? [],
 }
 
 export type GameService = typeof gameService;
@@ -67,7 +87,7 @@ onUnmounted(()=>{
             <InputTest ref="input"/>   
         </template>
         <template #player>
-            <Player :cards="playerCards" />
+            <Player ref="player" :cards="playerCards" :maxSelection/>
         </template>
     </Layout>
 </template>

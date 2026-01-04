@@ -113,7 +113,7 @@ export class PlayerClient<T extends Record<string, any>> {
 		req:RpcRequest<string, any[], R>,
 		options:{
 			returnMode:"call",
-			timeout:number,
+			timeoutMs:number,
 			defaultResult?:R,
 		}):Promise<R>
 	public handleRequest(
@@ -121,14 +121,14 @@ export class PlayerClient<T extends Record<string, any>> {
 		options:{
 			returnMode:'emit'|'reserve',
 			defaultResult?:any,
-			timeout?:number
+			timeoutMs?:number
 		}):RpcRequest;
 	public handleRequest(
 		req:RpcRequest,
 		options:{
 			returnMode:'emit'| "call"|'reserve',
 			defaultResult?:any,
-			timeout?:number
+			timeoutMs?:number
 		}
 		): Promise<any>|RpcRequest {
 		if(options.returnMode==='emit'){
@@ -137,11 +137,11 @@ export class PlayerClient<T extends Record<string, any>> {
 		} else if(options.returnMode==='reserve'){
 			return req;
 		} else if(options.returnMode==="call"){
-			if (!options.timeout) throw new Error("request模式必须指定timeout参数");
+			if (!options.timeoutMs) throw new Error("request模式必须指定timeout参数");
 			return (async()=>{
 				let res: unknown;
 				try{
-					res = await this.socket.timeout(options.timeout as number).emitWithAck("rpc-call",req)
+					res = await this.socket.timeout(options.timeoutMs as number).emitWithAck("rpc-call",req)
 				}catch(e){
 					const hasDefault = options.defaultResult !== undefined;
 					if(e instanceof Error){
@@ -167,11 +167,11 @@ export class PlayerClient<T extends Record<string, any>> {
 			executionMode: 'sequential' | 'parallel',
 			returnMode:'emit'| "call"|'reserve',
 			defaultResult?:R,
-			timeout?:number,
+			timeoutMs?:number,
 		},
 		batchCtx:(stub:RPCify_Reserve<T>)=>RpcRequest<string, any[], R>|null|void|undefined
 		):BatchRpcquest|Promise<R|RpcResponse[]>{
-		if (options.returnMode==="call" && !options.timeout) throw new Error("request模式必须指定timeout参数");
+		if (options.returnMode==="call" && !options.timeoutMs) throw new Error("request模式必须指定timeout参数");
 		const reqs:RpcRequest[] = [];
 	
 		const batchCallback = <RReturn>(req: RpcRequest<string, any[], RReturn>) =>{
@@ -209,10 +209,10 @@ export class PlayerClient<T extends Record<string, any>> {
 		options:{
 			returnMode:'emit'| "call"|'reserve',
 			defaultResult?:any,
-			timeout?:number
+			timeoutMs?:number
 		}
 	):RPCify<T>|RPCify_Reserve<T>|RPCify_Request<T>{
-		if (options.returnMode==="call" && !options.timeout ) throw new Error("request模式必须指定timeout参数");
+		if (options.returnMode==="call" && !options.timeoutMs ) throw new Error("request模式必须指定timeout参数");
 		return createChainCollectorProxy([], (req)=>this.handleRequest(req,options as any)) as RPCify_Reserve<T>;
 	}
 
@@ -222,8 +222,8 @@ export class PlayerClient<T extends Record<string, any>> {
 	}
 
 	//发送请求，等待结果返回；如果defaultResult是真值，且发生超时等异常或返回值为undefined，则返回defaultResult
-	public call(timeout:number,defaultResult:any):RPCify_Request<T>{
-		return this.singleAdvanced({returnMode:"call",timeout,defaultResult}) as RPCify_Request<T>;
+	public call(timeoutMs:number,defaultResult:any):RPCify_Request<T>{
+		return this.singleAdvanced({returnMode:"call",timeoutMs: timeoutMs,defaultResult}) as RPCify_Request<T>;
     }
 
 	public emitBatch(executionMode: 'sequential' | 'parallel',batchCtx:(stub:RPCify_Reserve<T>)=>any):RpcRequest{
@@ -238,7 +238,7 @@ export class PlayerClient<T extends Record<string, any>> {
 
 	public async callBatch<R>(options:{
 			executionMode: 'sequential' | 'parallel',
-			timeout:number,
+			timeoutMs:number,
 			defaultResult: NoInfer<R>
 		},
 		batchCtx:(stub:RPCify_Reserve<T>)=>(RpcRequest<string, any[], R>)
