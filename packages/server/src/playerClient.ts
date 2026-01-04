@@ -17,11 +17,7 @@ export type RPCify_Reserve<T> = T extends (...args: infer A) => infer R
         ? { [K in keyof T]: RPCify_Reserve<T[K]> }
         : never;
 
-export type RPCify<T> = T extends (...args: infer A) => infer R
-    ? (...args: A) => any
-    : T extends object
-        ? { [K in keyof T]: RPCify<T[K]> }
-        : never;
+export type RPCify<T,D=any> = RPCify_Reserve<T>|RPCify_Request<T,D>
 
 function createChainCollectorProxy<T>(
 	path: string[], 
@@ -211,7 +207,7 @@ export class RemoteClient<T extends Record<string, any>> {
 			defaultResult?:any,
 			timeoutMs?:number
 		}
-	):RPCify<T>|RPCify_Reserve<T>|RPCify_Request<T,D>{
+	):RPCify_Reserve<T>|RPCify_Request<T,D>{
 		if (options.returnMode==="call" && !options.timeoutMs ) throw new Error("request模式必须指定timeout参数");
 		return createChainCollectorProxy([], (req)=>this.handleRequest(req,options as any)) as RPCify_Reserve<T>;
 	}
