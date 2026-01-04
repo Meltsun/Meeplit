@@ -60,9 +60,3 @@ export interface ServerToClientEvents{
 export interface ClientToServerEvents {
     "chat": (message: string) => void;
 }
-
-
-export default interface Card{
-    img: string;
-    name: string;
-}

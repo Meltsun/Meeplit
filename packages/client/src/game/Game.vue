@@ -1,76 +1,38 @@
 <script setup lang="ts">
-import { ref, useTemplateRef,ShallowRef,onUnmounted, onMounted} from 'vue';
+import { onUnmounted, onMounted } from 'vue';
 
 import Layout from './Layout.vue';
 import GameInfo from '@/game/GameInfo.vue'
 import InputTest from '@/game/InputTest.vue'
-import { GameManager } from '@/game/GameManager';
-import {Card} from "@meeplit/shared/game";
 import Player from './Player.vue';
+import { ConnectionManager } from '@/game/GameManager';
+import GameController from '@/game/GameController';
 
-const gameInfoText = ref('default game info text');
-const cards = ref<Card[]>([]);
-const inputTest= useTemplateRef('input') as ShallowRef<InstanceType<typeof InputTest>>;
-const playerRef = useTemplateRef('player') as ShallowRef<InstanceType<typeof Player>>;
-const playerCards = ref<Card[]>([]);
-const maxSelection=ref<number|undefined>(undefined);
+// 1. 初始化 Controller
+// 所有的游戏状态和逻辑现在都由 Controller 管理
+const controller = new GameController();
 
-const resolveCardImg = (img: string): string => {
-    // Prefix host/port when an absolute URL is not provided
-    if (/^https?:\/\//i.test(img)) return img;
-    const base = `http://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`;
-    return new URL(img, base).toString();
-};
+// 2. 获取响应式状态以供模板使用
+// 直接解构 ref 对象是安全的，它们在模板中会自动解包
+const { 
+    gameInfoText, 
+    playerCards, 
+    maxSelection,
+    // 这里的 ref 将被绑定到模板中的组件
+    inputComponent,
+    playerComponent 
+} = controller;
 
-const gameService={
-    setGameInfo: (text:string) => gameInfoText.value = text,
-    ask:async (options: { 
-            prompt: string; 
-            choices: string[]; 
-            timeoutMs: number; 
-            columns?: number;
-            defaultChoiceIndex:number; 
-        }):Promise<string>=>inputTest.value.getInput(options),
-    ping:()=> 'pong',
-    noReturnTest:():void=>{},
-    updateCard:(cards:Card[]):void=>{
-        console.log("收到卡牌更新",cards);
-        playerCards.value = cards.map(card => ({
-            ...card,
-            img: resolveCardImg(card.img),
-        }));
-    },
-    playCard:async (options: { 
-            cardnum:number;
-            timeoutMs: number; 
-        }):Promise<string[]>=>{
-        maxSelection.value = options.cardnum;
-        const isplay = await gameService.ask({
-            prompt:`请选择${options.cardnum}张牌`,
-            choices:['出牌',"取消"],
-            timeoutMs:options.timeoutMs,
-            defaultChoiceIndex:-1,
-        });
-        let res:string[] = []
-        if(isplay==="出牌"){
-            res = playerRef.value?.getSelectedNames() ?? [];
-        }
-        maxSelection.value = 0;
-        return res
-    },
-    getSelectedCards: () => playerRef.value.getSelectedNames() ?? [],
-}
-
-export type GameService = typeof gameService;
-const manager = new GameManager(
+// 3. 初始化网络连接
+const manager = new ConnectionManager(
     `ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`,
 );
 
 onMounted(()=>{
     manager.connect();
-    manager.exposeRpcObject(gameService);
+    // 将 Controller 的 service 暴露给服务器
+    manager.exposeRpcObject(controller.service);
 });
-
 
 onUnmounted(()=>{
     manager.disconnect();
@@ -84,10 +46,11 @@ onUnmounted(()=>{
             <GameInfo :text="gameInfoText"/>
         </template>
         <template #ask>
-            <InputTest ref="input"/>   
+            <!-- 使用 ref="inputComponent" 将组件实例绑定到 controller.inputComponent -->
+            <InputTest ref="inputComponent"/>   
         </template>
         <template #player>
-            <Player ref="player" :cards="playerCards" :maxSelection/>
+            <Player ref="playerComponent" :cards="playerCards" :maxSelection="maxSelection"/>
         </template>
     </Layout>
 </template>

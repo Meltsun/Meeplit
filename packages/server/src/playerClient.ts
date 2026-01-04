@@ -4,10 +4,10 @@ import { RPC_BATCH_METHOD_NAME, BatchRpcquest, ClientToServerEvents, RPCErrorCod
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
 // RPC stub，相比原类型没有属性，所有方法都返回 Promise
-export type RPCify_Request<T> = T extends (...args: infer A) => infer R
-    ? (...args: A) => Promise<Awaited<R>>
+export type RPCify_Request<T,D> = T extends (...args: infer A) => infer R
+    ? (...args: A) => Promise<Awaited<R>| D>
     : T extends object
-        ? { [K in keyof T]: RPCify_Request<T[K]> }
+        ? { [K in keyof T]: RPCify_Request<T[K],D> }
         : never;
 
 // RPC 缓冲stub，相比原类型没有属性，所有方法都返回描述符，供后续批量调用
@@ -104,7 +104,7 @@ function handleResponse(
 	}
 }
 
-export class PlayerClient<T extends Record<string, any>> {
+export class RemoteClient<T extends Record<string, any>> {
 	constructor(
 		private socket: Socket<ClientToServerEvents,ServerToClientEvents>,
 	){}
@@ -162,15 +162,15 @@ export class PlayerClient<T extends Record<string, any>> {
 		}
 	}
 	
-	public batchAdvanced<R>(
+	public batchAdvanced<R,D>(
 		options:{
 			executionMode: 'sequential' | 'parallel',
 			returnMode:'emit'| "call"|'reserve',
-			defaultResult?:R,
+			defaultResult?:D,
 			timeoutMs?:number,
 		},
 		batchCtx:(stub:RPCify_Reserve<T>)=>RpcRequest<string, any[], R>|null|void|undefined
-		):BatchRpcquest|Promise<R|RpcResponse[]>{
+		):BatchRpcquest|Promise<(R|D)|RpcResponse[]>{
 		if (options.returnMode==="call" && !options.timeoutMs) throw new Error("request模式必须指定timeout参数");
 		const reqs:RpcRequest[] = [];
 	
@@ -205,13 +205,13 @@ export class PlayerClient<T extends Record<string, any>> {
 		return batchReq;
 	}
 
-	public singleAdvanced(
+	public singleAdvanced<D>(
 		options:{
 			returnMode:'emit'| "call"|'reserve',
 			defaultResult?:any,
 			timeoutMs?:number
 		}
-	):RPCify<T>|RPCify_Reserve<T>|RPCify_Request<T>{
+	):RPCify<T>|RPCify_Reserve<T>|RPCify_Request<T,D>{
 		if (options.returnMode==="call" && !options.timeoutMs ) throw new Error("request模式必须指定timeout参数");
 		return createChainCollectorProxy([], (req)=>this.handleRequest(req,options as any)) as RPCify_Reserve<T>;
 	}
@@ -222,8 +222,8 @@ export class PlayerClient<T extends Record<string, any>> {
 	}
 
 	//发送请求，等待结果返回；如果defaultResult是真值，且发生超时等异常或返回值为undefined，则返回defaultResult
-	public call(timeoutMs:number,defaultResult:any):RPCify_Request<T>{
-		return this.singleAdvanced({returnMode:"call",timeoutMs: timeoutMs,defaultResult}) as RPCify_Request<T>;
+	public call<D>(timeoutMs:number,defaultResult:D):RPCify_Request<T,D>{
+		return this.singleAdvanced({returnMode:"call",timeoutMs: timeoutMs,defaultResult}) as RPCify_Request<T,D>;
     }
 
 	public emitBatch(executionMode: 'sequential' | 'parallel',batchCtx:(stub:RPCify_Reserve<T>)=>any):RpcRequest{
@@ -236,20 +236,20 @@ export class PlayerClient<T extends Record<string, any>> {
 		) as RpcRequest;
 	}
 
-	public async callBatch<R>(options:{
+	public async callBatch<R,D>(options:{
 			executionMode: 'sequential' | 'parallel',
 			timeoutMs:number,
-			defaultResult: NoInfer<R>
+			defaultResult: D
 		},
 		batchCtx:(stub:RPCify_Reserve<T>)=>(RpcRequest<string, any[], R>)
-	):Promise<R>{
-		return this.batchAdvanced(
+	):Promise<R|D>{
+		return this.batchAdvanced<R,D>(
 			{
 				...options,
 				returnMode:"call"
 			},
 			batchCtx
-		) as Promise<R>;
+		) as Promise<R|D>;
 	}
 }
 

@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError} from "@meeplit/shared/rpc"
 
-export class GameManager{
+export class ConnectionManager{
     private socket!: Socket<ServerToClientEvents,ClientToServerEvents>;
 
 

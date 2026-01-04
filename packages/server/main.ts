@@ -7,7 +7,7 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
-import { PlayerClient } from "./src/playerClient";
+import { RemoteClient } from "./src/playerClient";
 import * as Cards from "./src/game";
 
 
@@ -46,20 +46,20 @@ Bun.serve({
     },
     websocket
 });
-let server!: PlayerClient<GameService>;
+let player!: RemoteClient<GameService>;
 
-export default server
+export default player
 
 socketioServer.on("connection", async (socket) => {
     console.log("Reverse RPC client connected", socket.id);
-    server = new PlayerClient(socket);
+    player = new RemoteClient(socket);
     test()
 });
 
 async function test() {
     let s:any
-    server.emit().updateCard(Array(12).fill(Cards.testCard))
-    server.emit().setGameInfo("选择1张牌")
-    s=await server.call(15000,"超时未选择").playCard({cardnum:1,timeoutMs:10000})
+    player.emit().updateCard(Array(12).fill(Cards.testCard))
+    player.emit().setGameInfo("选择1张牌")
+    const c=await player.call(15000,123).playCard({cardnum:1,timeoutMs:10000})
     console.log(s)
 }
