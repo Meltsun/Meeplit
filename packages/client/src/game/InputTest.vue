@@ -1,61 +1,77 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, type Ref } from 'vue';
 
 type Resolver = (value: string) => void;
+type ChoiceInput = string[] | Record<string, Ref<boolean>>;
+type ChoiceItem = {
+    label: string;
+    enabled: Ref<boolean>;
+};
 
 const isVisible = ref(false);
 const pendingResolve = ref<Resolver | null>(null);
 const promptText = ref('');
-const choicesRef = ref<string[]>([]);
+const choiceItemsRef = ref<ChoiceItem[]>([]);
 const columnsRef = ref(2);
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
 const columnCount = computed(() => Math.max(1, columnsRef.value));
 const gridStyle = computed(() => ({ gridTemplateColumns: `repeat(${columnCount.value}, minmax(0, 1fr))` }));
 defineExpose({
-    getInput:async function (options: {
+    getInput: async function (options: {
         prompt: string;
-        choices: string[];
+        choices: ChoiceInput;
         columns?: number;
         timeoutMs: number;
-        defaultChoiceIndex:number;
+        defaultChoice: string;
     }): Promise<string> {
         if (pendingResolve.value) {
             throw new Error('Input request already in progress');
         }
-        const { prompt, choices, timeoutMs: timeout, defaultChoiceIndex} = options;
-        const columns = options.columns ?? choices.length;
+        const { prompt, choices, timeoutMs, defaultChoice} = options;
+        if (choices.length === 0) {
+            throw new Error('No choices provided for input request');
+        }
+        const normalizedChoices = normalizeChoices(choices);
+
         promptText.value = prompt;
-        choicesRef.value = choices;
-        columnsRef.value = Math.max(1, columns);
+        choiceItemsRef.value = normalizedChoices;
+        columnsRef.value = Math.max(1, options.columns ?? normalizedChoices.length);
         isVisible.value = true;
 
         return new Promise<string>((resolve) => {
             pendingResolve.value = resolve;
 
-            if (timeout > 0) {
+            if (timeoutMs > 0) {
                 timeoutHandle = setTimeout(() => {
                     if (!pendingResolve.value) return;
-                    const fallback = choices[defaultChoiceIndex]
-                    pendingResolve.value(fallback);
                     pendingResolve.value = null;
                     isVisible.value = false;
                     timeoutHandle = null;
-                }, timeout);
+                    resolve(defaultChoice);
+                }, timeoutMs);
             }
         });
     }
 });
 
-function handleChoice(choice: string): void {
-    if (!pendingResolve.value) return;
+function normalizeChoices(choices: ChoiceInput): ChoiceItem[] {
+    if (Array.isArray(choices)) {
+        return choices.map((label) => ({ label, enabled: ref(true) }));
+    }
+
+    return Object.entries(choices).map(([label, enabled]) => ({ label, enabled }));
+}
+
+function handleChoice(label:string,enabled:Boolean): void {
+    if (!pendingResolve.value || !enabled) return;
 
     if (timeoutHandle) {
         clearTimeout(timeoutHandle);
         timeoutHandle = null;
     }
 
-    pendingResolve.value(choice);
+    pendingResolve.value(label);
     pendingResolve.value = null;
     isVisible.value = false;
 }
@@ -73,12 +89,14 @@ function handleChoice(choice: string): void {
             </div>
             <div class="grid gap-3" :style="gridStyle">
                 <button
-                    v-for="(choice, idx) in choicesRef"
+                    v-for="(choice, idx) in choiceItemsRef"
                     :key="idx"
                     class="rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white hover:shadow focus:outline-none focus-visible:ring focus-visible:ring-blue-400"
-                    @click="handleChoice(choice)"
+                    :disabled="!choice.enabled"
+                    :class="{ 'opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none': !choice.enabled }"
+                    @click="handleChoice(choice.label, choice.enabled)"
                 >
-                    {{ choice }}
+                    {{ choice.label }}
                 </button>
             </div>
         </div>

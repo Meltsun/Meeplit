@@ -5,7 +5,7 @@
             "type": "chrome",
             "request": "launch",
             "name": "Vite Debug",
-            "url": "http://localhost:5173",
+            "url": "http://localhost:56788",
             "webRoot": "${workspaceFolder}/packages/client",
             "pathMapping": {
                 "/@fs/D:/": "D:/",

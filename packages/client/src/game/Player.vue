@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Card } from '@meeplit/shared/game';
 
 const props = defineProps<{
@@ -26,8 +26,10 @@ const toggleSelection = (index: number) => {
     }
 };
 
+const selectedNames = computed(() => selectedIndices.value.map(i => props.cards[i]?.name).filter(Boolean) as string[]);
+
 defineExpose({
-    getSelectedNames: () => selectedIndices.value.map(i => props.cards[i]?.name).filter(Boolean)
+    selectedNames
 });
 </script>
 

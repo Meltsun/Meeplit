@@ -10,7 +10,7 @@ import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
 import { RemoteClient } from "./src/playerClient";
 import * as Cards from "./src/game";
 
-import type { GameService } from "@meeplit/client"
+import type GameService from "@meeplit/client"
 
 console.log('Server will bind WS on', WS_HOST, WS_PORT, 'ws-url', WS_URL);
 
@@ -56,9 +56,8 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-    let s:any
     player.emit().updateCard(Array(12).fill(Cards.testCard))
-    player.emit().setGameInfo("选择1张牌")
-    const c=await player.call(15000,123).playCard({cardnum:1,timeoutMs:10000})
-    console.log(s)
+    player.emit().setGameInfo("选择3张牌")
+    const c=await player.call(15000,123).playCard({cardnum:3,timeoutMs:10000})
+    console.log(c)
 }
