@@ -56,8 +56,11 @@ socketioServer.on("connection", async (socket) => {
 });
 
 async function test() {
-    player.emit().updateCard(Array(12).fill(Cards.testCard))
+    const cards=[new Cards.TestCard(1),new Cards.TestCard(2),new Cards.TestCard(3)]
+    player.emit().updateCard(cards)
     player.emit().setGameInfo("选择3张牌")
-    const c=await player.call(15000,123).playCard({cardnum:3,timeoutMs:10000})
-    console.log(c)
+    const c=await player.call(15000,[] as Cards.TestCard[]).playCard({cardnum:1,timeoutMs:10000})
+    for(const card of c){
+        card.play();
+    }
 }

@@ -1,3 +1,1 @@
-import testCard from "./testCard";
-
-export {testCard}
+export {TestCard,CardBase} from "./testCard";

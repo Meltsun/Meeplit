@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io";
-import { RPC_BATCH_METHOD_NAME, BatchRpcquest, ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents } from "@meeplit/shared/rpc";
+import { RPC_BATCH_METHOD_NAME, BatchRpcquest, ClientToServerEvents, RPCErrorCode, RpcError, RpcRequest,RpcResponse, ServerToClientEvents, reviveRehydratedValue, markRevivablePayload} from "@meeplit/shared/rpc";
 
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
@@ -43,7 +43,7 @@ function handleResponse(
 	response: unknown,
 	defaultResult: unknown
 ){
-	console.log(response)
+	// console.log(response)
 	try {
 		if (response === null || response === undefined)
 			throw new RpcError(RPCErrorCode.InvalidRequest, `响应为空${response}`);
@@ -73,7 +73,7 @@ function handleResponse(
 		if ("result" in resObj) {
 			const result = (resObj as { result: unknown }).result;
 			if (result === undefined) return defaultResult;
-			return result;
+			return reviveRehydratedValue(result);
 		}
 
 		throw new RpcError(
@@ -98,6 +98,13 @@ function handleResponse(
 		}
 		return defaultResult;
 	}
+}
+
+function reviveRpcResponse(res: RpcResponse){
+	if (res && "result" in res) {
+		(res as RpcResponse<any>).result = reviveRehydratedValue((res as RpcResponse<any>).result);
+	}
+	return res;
 }
 
 export class RemoteClient<T extends Record<string, any>> {
@@ -127,11 +134,13 @@ export class RemoteClient<T extends Record<string, any>> {
 			timeoutMs?:number
 		}
 		): Promise<any>|RpcRequest {
+		if(options.returnMode==='reserve'){
+			return req;
+		}
+		markRevivablePayload(req);
 		if(options.returnMode==='emit'){
 			this.socket.emit("rpc-emit",req);
 			return req
-		} else if(options.returnMode==='reserve'){
-			return req;
 		} else if(options.returnMode==="call"){
 			if (!options.timeoutMs) throw new Error("request模式必须指定timeout参数");
 			return (async()=>{
@@ -184,7 +193,7 @@ export class RemoteClient<T extends Record<string, any>> {
 		if(options.returnMode==="call"){
 			const result = this.handleRequest(batchReq, options as any) as Promise<RpcResponse[]>;
 			return (async()=>{
-				const batchRes = await result;
+				const batchRes = (await result).map(reviveRpcResponse);
 				if(markedReq){
 					const idx = reqs.indexOf(markedReq);
 					const res=batchRes[idx] as RpcResponse<any>
@@ -248,6 +257,3 @@ export class RemoteClient<T extends Record<string, any>> {
 		) as Promise<R|D>;
 	}
 }
-
-
-

@@ -1,8 +1,13 @@
 import {Card} from "@meeplit/shared/game";
 
-const testCard: Card = {
-    img: "/assets/test.png",
-    name: "测试卡牌"
-};
 
-export default testCard;
+export class TestCard extends Card{
+    img= "/assets/test.png"
+    name= "测试卡牌"
+    constructor(public id: number){
+        super();
+    }
+    override play(): void {
+        console.log("使用了", this.name);
+    }
+};

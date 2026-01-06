@@ -18,6 +18,8 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "allowJs": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": false,

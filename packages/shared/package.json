@@ -10,5 +10,8 @@
     "./game": {
       "import": "./game.ts"
     }
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
   }
 }

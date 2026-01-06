@@ -45,7 +45,6 @@ onUnmounted(()=>{
             <GameInfo :text="gameInfoText"/>
         </template>
         <template #ask>
-            <!-- 使用 ref="inputComponent" 将组件实例绑定到 controller.inputComponent -->
             <InputTest ref="inputComponent"/>   
         </template>
         <template #player>

@@ -1,44 +1,34 @@
-# Meeplit Copilot Instructions
+## Meeplit Copilot Notes
 
-## Overview
-- This repo is a Bun + Vite monorepo (workspaces) implementing reverse-RPC tabletop games: server drives turns by calling browser-exposed functions.
-- Core idea: clients expose game actions; server orchestrates by invoking them via socket.io acknowledgements and batch calls.
+### Big picture
+- Monorepo (Bun + Vite) running a reverse-RPC tabletop demo: server invokes browser-exposed methods; client never initiates RPC to server.
+- Socket.io with ack-based RPC plus batching; Hono serves static assets and CORS gateway at the same Bun server.
+- Shared protocol/types live in [packages/shared](packages/shared) (RPC contracts and card interface).
 
-## Packages to know
-- [packages/client](packages/client) Vue 3 + Pinia frontend; entry mounts [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue) via [packages/client/src/main.ts](packages/client/src/main.ts).
-- [packages/server](packages/server) Bun runtime hosting socket.io (bun-engine) + Hono for HTTP; orchestration in [packages/server/main.ts](packages/server/main.ts).
-- [packages/shared](packages/shared/index.ts) shared RPC protocol types/constants (`RPC_BATCH_METHOD_NAME`, `RpcRequest`, `RpcResponse`, `ServerToClientEvents`, `ClientToServerEvents`).
+### Dev workflow
+- Root scripts: `bun run s` runs [packages/server/main.ts](packages/server/main.ts); `bun run c` starts Vite via [packages/client/vite.config.ts](packages/client/vite.config.ts); client workspace also has `bun run dev|build|preview|type-check`.
+- Env is loaded from root `.env` by [packages/server/src/env.ts](packages/server/src/env.ts): `VITE_WS_HOST`, `VITE_WS_PORT`, `VITE_CLIENT_ORIGIN`; Vite dev port comes from `VITE_CLIENT_ORIGIN_PORT`. Client `envDir` points to repo root.
+- Static files mount at `/assets/*` from [packages](packages); add images under [packages/assets](packages/assets) and reference with that path.
 
-## Dev workflow
-- From repo root: `bun run s` starts the Bun server (binds ws using env `VITE_WS_HOST/PORT`).
-- From repo root: `bun run c` starts the Vite client using [packages/client/vite.config.ts](packages/client/vite.config.ts) (envDir is repo root for `.env`).
-- Client-only scripts inside package: `bun run dev|build|preview|type-check` (cwd `packages/client`).
+### RPC surface exposed by client
+- [packages/client/src/game/ConnectionManager.ts](packages/client/src/game/ConnectionManager.ts) registers `rpc-call` (ack required) and `rpc-emit`; calls `safeCallMethod` and coerces `undefined` results to `null` to keep acks alive. Batches go through the same handler when `method === rpc-batch`.
+- [packages/client/src/game/GameController.ts](packages/client/src/game/GameController.ts) is the exposed service in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue); holds refs `gameInfoText`, `playerCards`, `maxSelection`, and component refs `inputComponent`, `playerComponent`.
+  - `setGameInfo`, `ping`, `noReturnTest` trivial endpoints.
+  - `ask` delegates to [packages/client/src/game/InputTest.vue](packages/client/src/game/InputTest.vue) `getInput` (prompt + choices; supports ref/computed choices, columns, timeout returning `defaultChoice`).
+  - `updateCard` rewrites `img` via `resolveCardImg` using `VITE_WS_HOST/PORT` then updates `playerCards`.
+  - `playCard` limits selection via `maxSelection`, asks via `InputTest` with `出牌/取消`, returns selected `Card[]` or `[]`; resets selection cap afterward.
+  - `getSelectedCards` reads from [packages/client/src/game/Player.vue](packages/client/src/game/Player.vue) (`getSelectedIds` exposes selected indices).
 
-## Reverse-RPC protocol
-- Client is the RPC target. `GameManager` in [packages/client/src/game/GameManager.ts](packages/client/src/game/GameManager.ts) connects a socket.io client and registers `rpc-call` (ack) + `rpc-emit` handlers, dispatching to exposed methods.
-- Safety: `safeCallMethod` resolves dotted paths, rejects prototype traps (`__proto__`, `constructor`, etc.), wraps results in `RpcResponse`, and logs service errors.
-- Batch support: calling method name `rpc-batch` triggers sequential/parallel execution over a list of `RpcRequest`s.
-- Server-side caller: `BrowserObjectCallServer` in [packages/server/src/browserObjectCallServer.ts](packages/server/src/browserObjectCallServer.ts) builds chainable proxies so the server can `.call`, `.emit`, or create batch requests; `callBatch` optionally extracts a specific result if returned request matches.
+### RPC caller on server
+- [packages/server/src/playerClient.ts](packages/server/src/playerClient.ts) builds `RemoteClient<T>` proxy: `emit()` fire-and-forget; `call(timeout, default)` waits for ack with timeout/default fallback; `emitBatch`/`callBatch`/`batchAdvanced` send `rpc-batch` (`sequential|parallel`) and optionally extract a specific call’s result.
+- Requests are marked via `markRevivablePayload` so class instances round-trip; responses go through `handleResponse`/`reviveRehydratedValue` and map errors to `RpcErrorCode`.
+- Example flow in [packages/server/main.ts](packages/server/main.ts): on socket connection, create `RemoteClient<GameService>`, emit `updateCard`/`setGameInfo`, then `call(...).playCard` with timeout/default `[]` and invoke `play()` on returned cards.
+- Card classes live in [packages/server/src/game/testCard.ts](packages/server/src/game/testCard.ts) (`@Revivable` `TestCard` extends `CardBase`) and are exported via [packages/server/src/game/index.ts](packages/server/src/game/index.ts).
 
-## Client surface (GameService)
-- Game exposes `gameService` in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue): `setGameInfo(text)`, `ask(options)`, `ping()`, `noReturnTest()`. Extend here to add new RPC targets.
-- `InputTest` UI in [packages/client/src/game/InputTest.vue](packages/client/src/game/InputTest.vue) handles `ask`: shows prompt/choices, resolves on click or `timeoutMs` with `defaultChoiceIndex` fallback.
-- UI frame/layout lives in [packages/client/src/game/Layout.vue](packages/client/src/game/Layout.vue); uses Tailwind 4 classes and slots for `gameInfo`, `chat`, `opponent`, `board`, `ask`, `player` regions.
+### Shared protocol
+- [packages/shared/rpc.ts](packages/shared/rpc.ts) defines `RPC_BATCH_METHOD_NAME`, `RpcRequest`/`RpcResponse`, error codes, socket event contracts, and revivable serialization helpers (`@Revivable`, `markRevivablePayload`, `reviveRehydratedValue`).
+- [packages/shared/game.ts](packages/shared/game.ts) declares `Card { id, img, name, play() }` used across server/client.
 
-## Server usage pattern
-- Server boot in [packages/server/main.ts](packages/server/main.ts): binds socket.io over Bun/Hono, on connection sets `server = new BrowserObjectCallServer<GameService>(socket)`.
-- Example flow (`test()`): sequential `callBatch` of `ping`, `setGameInfo`, then `ask` with timeout/default; logs result. Use this as template for orchestrating turns.
-- CORS allowed origins driven by env `CLIENT_ORIGIN` (default `http://localhost:5173`).
-
-## Env/config
-- Root `.env` (loaded by both Vite and Bun via [packages/server/src/env.ts](packages/server/src/env.ts)): `VITE_WS_HOST`, `VITE_WS_PORT`, optionally `CLIENT_ORIGIN` for CORS.
-- Vite config disables dependency pre-bundling sourcemaps to ease debugging; root set to `packages/client` with alias `@` -> `src`.
-
-## Extending/adding RPC methods
-- Add method to `gameService` and expose via `GameManager.exposeRpcObject`; update `GameService` type export in [packages/client/src/main.ts](packages/client/src/main.ts) if signature changes.
-- Server side: use `BrowserObjectCallServer<GameService>` to gain typed stubs; batch when you need ordered/parallel operations.
-- Keep methods pure/async-friendly; return `null` instead of `undefined` to avoid ack drop, mirroring `safeCallMethod` behavior.
-
-## Debugging tips
-- RPC errors surface in console logs on both sides; `RpcError` codes map to InvalidRequest/MethodNotFound/ServiceError/InternalError.
-- If ack is missing in `rpc-call`, client logs a warning; ensure `ack` is passed when emitting from server.
+### Extending
+- Add client-callable methods to `GameController` and expose via `ConnectionManager.exposeRpcObject(controller)` in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue); ensure methods return non-`undefined`.
+- Use `RemoteClient` helpers for new server orchestration to keep timeout/error/batch handling consistent; decorate serializable classes with `@Revivable` if methods/prototypes must survive round-trip.
