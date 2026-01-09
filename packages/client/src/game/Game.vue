@@ -31,6 +31,9 @@ onMounted(()=>{
     manager.connect();
     // 直接暴露 Controller 实例上的公共方法
     manager.exposeRpcObject(controller);
+    if(import.meta.env.VITE_TEST_MODE=== 'true'){
+        
+    }
 });
 
 onUnmounted(()=>{

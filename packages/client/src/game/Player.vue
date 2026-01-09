@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import CardItem from './CardItem.vue';
 import type { Card } from '@meeplit/shared/game';
 
 const props = defineProps<{
@@ -40,22 +41,15 @@ defineExpose({
             tag="div"
             class="w-full h-full flex items-center gap-3 overflow-x-auto overflow-y-hidden px-4 pt-2 pb-4"
         >
-            <div
+            <CardItem
                 v-for="(card, index) in cards"
                 :key="card.id"
-                class="card-item h-full shrink-0 flex flex-col items-center justify-center transition-transform duration-200 hover:scale-105 cursor-pointer rounded-lg"
-                :class="{ 'ring-4 ring-[#3167cd]': selectedIndices.includes(index) }"
-                @mouseenter="hoveredCardName = card.name"
-                @mouseleave="hoveredCardName = ''"
-                @click="toggleSelection(index)"
-            >
-                <img
-                    :src="card.img"
-                    :alt="card.name"
-                    class="h-full w-auto object-contain rounded-md shadow-md bg-white cursor-help"
-                />
-                <!-- <span class="text-sm text-[#0f1d3a]">{{ card.name }}</span> -->
-            </div>
+                :card="card"
+                :selected="selectedIndices.includes(index)"
+                @toggle="toggleSelection(index)"
+                @hover="hoveredCardName = $event"
+                @unhover="hoveredCardName = ''"
+            />
         </TransitionGroup>
 
         <!-- 数量提示 -->
@@ -66,10 +60,6 @@ defineExpose({
 </template>
 
 <style scoped>
-.card-item {
-    will-change: transform, opacity;
-}
-
 .card-enter-from,
 .card-leave-to {
     opacity: 0;
