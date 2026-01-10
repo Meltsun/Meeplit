@@ -3,10 +3,10 @@ import { Revivable } from "./rpc";
 
 @Revivable
 abstract class Card{
-    public abstract id: number
-    public abstract img: string;
-    public abstract name: string;
-    public abstract description_url?: string;
+    public abstract readonly id: number
+    public abstract readonly img: string;
+    public abstract readonly name: string;
+    public abstract readonly description_url?: string;
     public play(): void {}
 }
 

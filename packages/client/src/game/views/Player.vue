@@ -1,21 +1,38 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import CardItem from './CardItem.vue';
+import {CardList} from '@/game/components';
 import type { Card } from '@meeplit/shared/game';
 
 const props = defineProps<{
     cards: Card[];
     maxSelection?: number;
+    selectableCardIds?: Array<Card['id']>;
 }>();
 
-const hoveredCardName = ref('');
+const hoveredCardId = ref<number | null>(null);
 const selectedIndices = ref<number[]>([]);
 
 watch(() => props.maxSelection, () => {
     selectedIndices.value = [];
 });
 
+watch(
+    () => [props.cards, props.selectableCardIds],
+    () => {
+        selectedIndices.value = selectedIndices.value.filter((index) => isSelectableIndex(index));
+    },
+    { deep: true }
+);
+
+const isSelectableIndex = (index: number) => {
+    const card = props.cards[index];
+    if (!card) return false;
+    const allowedIds = props.selectableCardIds;
+    return allowedIds?.includes(card.id);
+};
+
 const toggleSelection = (index: number) => {
+    if (!isSelectableIndex(index)) return;
     const i = selectedIndices.value.indexOf(index);
     if (i > -1) {
         selectedIndices.value.splice(i, 1);
@@ -28,29 +45,26 @@ const toggleSelection = (index: number) => {
 };
 
 defineExpose({
-    getSelectedCards:function (){
-        return selectedIndices.value.map(i => props.cards[i]).filter(Boolean)
-    }
+    getSelectedCards: function () {
+        return selectedIndices.value.map((i) => props.cards[i]).filter(Boolean);
+    },
+    getHoveredCardId: function () {
+        return hoveredCardId.value;
+    },
 });
 </script>
 
 <template>
     <div class="relative w-full h-full bg-[#e6f7ff]">
-        <TransitionGroup
-            name="card"
-            tag="div"
-            class="w-full h-full flex items-center gap-3 overflow-x-auto overflow-y-hidden px-4 pt-2 pb-4"
+        <CardList
+            :cards="cards"
+            :selected-indices="selectedIndices"
+            :selectable-card-ids="selectableCardIds"
+            @toggle="toggleSelection"
+            @hover="hoveredCardId = $event"
+            @unhover="hoveredCardId = null"
         >
-            <CardItem
-                v-for="(card, index) in cards"
-                :key="card.id"
-                :card="card"
-                :selected="selectedIndices.includes(index)"
-                @toggle="toggleSelection(index)"
-                @hover="hoveredCardName = $event"
-                @unhover="hoveredCardName = ''"
-            />
-        </TransitionGroup>
+        </CardList>
 
         <!-- 数量提示 -->
         <div v-if="cards.length" class="absolute top-1 right-2 bg-black/20 text-[#0f1d3a] text-xs font-bold px-2 py-1 rounded-full pointer-events-none backdrop-blur-[2px]">
@@ -60,22 +74,4 @@ defineExpose({
 </template>
 
 <style scoped>
-.card-enter-from,
-.card-leave-to {
-    opacity: 0;
-    transform: translateY(12px);
-}
-
-.card-enter-active,
-.card-leave-active {
-    transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.card-leave-active {
-    transform: translateY(-12px);
-}
-
-.card-move {
-    transition: transform 220ms ease;
-}
 </style>

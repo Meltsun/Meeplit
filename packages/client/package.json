@@ -12,6 +12,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "@tsconfig/node24": "^24.0.3",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",
@@ -22,7 +23,9 @@
     "vue-tsc": "^3.1.5"
   },
   "dependencies": {
+    "@floating-ui/vue": "^1.1.9",
     "@meeplit/shared": "workspace:*",
+    "markdown-it": "^14.1.0",
     "pinia": "^3.0.4",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.18",

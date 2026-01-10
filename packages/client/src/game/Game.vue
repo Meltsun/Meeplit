@@ -13,8 +13,8 @@ const {state,gameService} = useGameService();
 // 2. 获取响应式状态以供模板使用
 // 直接解构 ref 对象是安全的，它们在模板中会自动解包
 const { 
-    gameInfoText, 
-    playerCards, 
+    gameInfo, 
+    handCards, 
     maxSelection,
     // 这里的 ref 将被绑定到模板中的组件
     inputComponent,
@@ -42,13 +42,13 @@ onUnmounted(()=>{
 <template>
     <Layout>
         <template #gameInfo>
-            <GameInfo :text="gameInfoText"/>
+            <GameInfo :text="gameInfo"/>
         </template>
         <template #ask>
             <InputTest ref="inputComponent"/>   
         </template>
         <template #player>
-            <Player ref="playerComponent" :cards="playerCards" :maxSelection="maxSelection"/>
+            <Player ref="playerComponent" :cards="handCards" :maxSelection="maxSelection"/>
         </template>
     </Layout>
 </template>

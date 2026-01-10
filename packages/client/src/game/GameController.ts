@@ -2,20 +2,16 @@ import { ref, shallowRef,Ref, computed } from 'vue';
 import type { Card } from "@meeplit/shared/game";
 import {InputTest,Player} from '@/game/views'
 
-// --- 辅助方法 ---
-function resolveCardImg(img: string): string {
-    if (/^https?:\/\//i.test(img)) return img;
-    const base = `http://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`;
-    return new URL(img, base).toString();
-}
-
 function makeInitialState() {
     return {
-        gameInfoText: ref('default game info text'),
-        playerCards: ref<Card[]>([]),
-        maxSelection: ref<number>(undefined!),
-        inputComponent: shallowRef<typeof InputTest>(undefined!),
+        // 左上角游戏信息
+        gameInfo: ref('default game info text'),  
+        // 手牌
         playerComponent: shallowRef<typeof Player>(undefined!),
+        handCards: ref<Card[]>([]),
+        maxSelection: ref<number>(0),
+        // 响应读条
+        inputComponent: shallowRef<typeof InputTest>(undefined!),
     }
 }
 
@@ -33,7 +29,7 @@ export default class GameService {
     // --- RPC 服务接口实现 ---
     // 这些方法将被暴露给服务器调用
     public setGameInfo(text: string): void {
-        this.state.gameInfoText.value = text;
+        this.state.gameInfo.value = text;
     }
 
     public async ask(options: {
@@ -58,8 +54,7 @@ export default class GameService {
 
     public updateCard(cards: Card[]): void {
         console.log("收到卡牌更新", cards);
-        cards.forEach(card => card.img = resolveCardImg(card.img));
-        this.state.playerCards.value = cards
+        this.state.handCards.value = cards
     }
 
     public async playCard(options: {

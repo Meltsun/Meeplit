@@ -1,1 +1,20 @@
+/* Global card list animations for TransitionGroup name="card" */
+.card-enter-from,
+.card-leave-to {
+	opacity: 0;
+	transform: translateY(12px);
+}
+
+.card-enter-active,
+.card-leave-active {
+	transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.card-leave-active {
+	transform: translateY(-12px);
+}
+
+.card-move {
+	transition: transform 220ms ease;
+}
 @import "tailwindcss";
