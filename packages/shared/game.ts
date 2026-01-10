@@ -1,4 +1,4 @@
-import { Revivable } from "packages/shared/rpc";
+import { Revivable } from "./rpc";
 
 
 @Revivable

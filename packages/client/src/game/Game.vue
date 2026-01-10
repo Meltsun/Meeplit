@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { onUnmounted, onMounted } from 'vue';
 
-import Layout from './Layout.vue';
-import GameInfo from '@/game/GameInfo.vue'
-import InputTest from '@/game/InputTest.vue'
-import Player from './Player.vue';
+import {Layout,GameInfo,InputTest,Player} from '@/game/views'
 import { ConnectionManager } from '@/game/ConnectionManager';
-import GameService from '@/game/GameController';
+import {useGameService} from '@/game/GameController';
+import {test} from '@/game/test'
 
-// 1. 初始化 Controller
+// 1. 初始化 service
 // 所有的游戏状态和逻辑现在都由 Controller 管理
-const controller = new GameService();
+const {state,gameService} = useGameService();
 
 // 2. 获取响应式状态以供模板使用
 // 直接解构 ref 对象是安全的，它们在模板中会自动解包
@@ -21,19 +19,18 @@ const {
     // 这里的 ref 将被绑定到模板中的组件
     inputComponent,
     playerComponent 
-} = controller;
+} = state;
 // 3. 初始化网络连接
-const manager = new ConnectionManager(
-    `ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`,
-);
+const manager = new ConnectionManager()
 
 onMounted(()=>{
-    manager.connect();
-    // 直接暴露 Controller 实例上的公共方法
-    manager.exposeRpcObject(controller);
     if(import.meta.env.VITE_TEST_MODE=== 'true'){
-        
+        test(gameService)
+        return
     }
+    manager.connect(`ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`);
+    // 直接暴露 Controller 实例上的公共方法
+    manager.exposeRpcObject(gameService);
 });
 
 onUnmounted(()=>{

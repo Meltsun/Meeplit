@@ -52,7 +52,7 @@ export default player
 socketioServer.on("connection", async (socket) => {
     console.log("Reverse RPC client connected", socket.id);
     player = new RemoteClient(socket);
-    test()
+    // test()
 });
 
 async function test() {

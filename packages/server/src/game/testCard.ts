@@ -4,6 +4,7 @@ import {Card} from "@meeplit/shared/game";
 export class TestCard extends Card{
     img= "/assets/test.png"
     name= "测试卡牌"
+    description_url= undefined;
     constructor(public id: number){
         super();
     }

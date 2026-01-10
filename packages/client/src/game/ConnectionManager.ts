@@ -4,15 +4,14 @@ import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,Cl
 export class ConnectionManager{
     private socket!: Socket<ServerToClientEvents,ClientToServerEvents>;
 
-
-    constructor(private url: string){}
-
-    public connect(): void {
-        this.socket = io(this.url)
+    public connect(url:string): void {
+        this.socket = io(url)
     }
 
     public disconnect(): void {
-        this.socket.disconnect();
+        if(this.socket){
+            this.socket.disconnect();
+        }
     }
 
     exposeRpcObject(target:Record<string, any>): void {
