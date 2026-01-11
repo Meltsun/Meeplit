@@ -18,3 +18,4 @@
 	transition: transform 220ms ease;
 }
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";

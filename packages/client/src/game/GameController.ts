@@ -1,6 +1,6 @@
 import { ref, shallowRef,Ref, computed } from 'vue';
 import type { Card } from "@meeplit/shared/game";
-import {InputTest,Player} from '@/game/views'
+import {Ask,Player} from '@/game/views'
 
 function makeInitialState() {
     return {
@@ -11,7 +11,7 @@ function makeInitialState() {
         handCards: ref<Card[]>([]),
         maxSelection: ref<number>(0),
         // 响应读条
-        inputComponent: shallowRef<typeof InputTest>(undefined!),
+        inputComponent: shallowRef<typeof Ask>(undefined!),
     }
 }
 

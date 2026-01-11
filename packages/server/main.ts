@@ -29,7 +29,7 @@ socketioServer.bind(engine);
 const app = new Hono();
 
 app.use('*', cors());
-app.use('/assets/*', cors({ origin: CLIENT_ORIGIN ?? '*', allowMethods: ['GET', 'HEAD', 'OPTIONS'] }));
+// app.use('/assets/*', cors({ origin: CLIENT_ORIGIN ?? '*', allowMethods: ['GET', 'HEAD', 'OPTIONS'] }));
 app.use('/assets/*', serveStatic({ root:"D:/Script/Meeplit/packages" }));
 
 const { websocket } = engine.handler();

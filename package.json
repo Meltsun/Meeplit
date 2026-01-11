@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "s": "bun ./packages/server/main.ts",
+    "s": "bun run --watch ./packages/server/main.ts",
     "test": "bun ./packages/server/test.ts",
     "c": "bunx --bun vite --config packages/client/vite.config.ts"
   },

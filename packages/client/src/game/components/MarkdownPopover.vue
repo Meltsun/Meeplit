@@ -83,19 +83,29 @@ onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick,
 
 <style scoped>
 .card-popover {
-    width: 320px;
-    height: 200px;
-    line-height: 1.4;
-    overflow: auto;
+    width: 320px; /* 弹窗宽度 */
+    height: 200px; /* 弹窗高度 */
+    line-height: 1.25; /* 整体行距基准 */
+    overflow: auto; /* 内容超出时允许滚动 */
 }
 
 .prose :is(h1, h2, h3, p, ul, ol) {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.25rem; /* 段落/列表之间的间距 */
 }
 
 .prose a {
-    color: #1f5fb8;
-    text-decoration: underline;
+    color: #1f5fb8; /* 链接颜色 */
+    text-decoration: underline; /* 链接下划线 */
+}
+
+.prose {
+    line-height: 1.25; /* Markdown 区域整体行距 */
+}
+
+.prose p,
+.prose li {
+    font-size: 0.8125rem; /* 正文/列表字号（改大/改小改这里） */
+    line-height: 1.25; /* 正文/列表行距 */
 }
 
 .fade-enter-active,

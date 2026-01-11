@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type Ref } from 'vue';
+import { ref, type Ref } from 'vue';
 
 type Resolver = (value: string) => void;
 type ChoiceInput = string[] | Record<string, Ref<boolean>>;
@@ -12,11 +12,9 @@ const isVisible = ref(false);
 const pendingResolve = ref<Resolver | null>(null);
 const promptText = ref('');
 const choiceItemsRef = ref<ChoiceItem[]>([]);
-const columnsRef = ref(2);
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-const columnCount = computed(() => Math.max(1, columnsRef.value));
-const gridStyle = computed(() => ({ gridTemplateColumns: `repeat(${columnCount.value}, minmax(0, 1fr))` }));
+// 纵向两行：上方提示 2/5，下方按钮区域 3/5
 defineExpose({
     getInput: async function (options: {
         prompt: string;
@@ -29,14 +27,14 @@ defineExpose({
             throw new Error('Input request already in progress');
         }
         const { prompt, choices, timeoutMs, defaultChoice} = options;
-        if (choices.length === 0) {
+        const choiceCount = Array.isArray(choices) ? choices.length : Object.keys(choices).length;
+        if (choiceCount === 0) {
             throw new Error('No choices provided for input request');
         }
         const normalizedChoices = normalizeChoices(choices);
 
         promptText.value = prompt;
         choiceItemsRef.value = normalizedChoices;
-        columnsRef.value = Math.max(1, options.columns ?? normalizedChoices.length);
         isVisible.value = true;
 
         return new Promise<string>((resolve) => {
@@ -63,7 +61,7 @@ function normalizeChoices(choices: ChoiceInput): ChoiceItem[] {
     return Object.entries(choices).map(([label, enabled]) => ({ label, enabled }));
 }
 
-function handleChoice(label:string,enabled:Boolean): void {
+function handleChoice(label:string,enabled:boolean): void {
     if (!pendingResolve.value || !enabled) return;
 
     if (timeoutHandle) {
@@ -79,25 +77,32 @@ function handleChoice(label:string,enabled:Boolean): void {
 </script>
 
 <template>
-    <div class="w-full flex justify-center">
+    <div class="h-full w-full flex flex-col min-h-0 overflow-hidden">
         <div
             v-if="isVisible"
-            class="w-full max-w-xl rounded-xl bg-white p-6 shadow-md border border-slate-200"
+            class="h-full w-full flex flex-col min-h-0 overflow-hidden"
         >
-            <div class="mb-4 text-center text-lg font-semibold text-slate-800">
-                {{ promptText }}
+            <!-- 上方提示：占高度的 2/5，字号使用较小的 vw + clamp 控制 -->
+            <div class="flex-2 flex items-end justify-center px-4 pb-1 min-h-0">
+                <div class="text-center font-semibold text-slate-800 leading-tight text-[clamp(14px,1.5vw,22px)]">
+                    {{ promptText }}
+                </div>
             </div>
-            <div class="grid gap-3" :style="gridStyle">
+
+            <!-- 下方按钮区域：占高度的 3/5，横向排布，按钮固定最小宽度但可随文本增长 -->
+            <div class="flex-3 min-h-0 overflow-hidden px-4">
+                <div class="flex flex-wrap gap-3 items-start content-start justify-center h-full w-full">
                 <button
                     v-for="(choice, idx) in choiceItemsRef"
                     :key="idx"
-                    class="rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white hover:shadow focus:outline-none focus-visible:ring focus-visible:ring-blue-400"
+                    class="flex-none w-auto min-w-30 rounded-lg border border-slate-300 bg-slate-50 px-[clamp(12px,2vw,18px)] py-2 text-[clamp(12px,1.4vw,16px)] font-medium text-slate-800 whitespace-nowrap transition hover:border-slate-400 hover:bg-white focus:outline-none focus-visible:ring focus-visible:ring-blue-400"
                     :disabled="!choice.enabled"
-                    :class="{ 'opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none': !choice.enabled }"
+                    :class="{ 'opacity-60 cursor-not-allowed': !choice.enabled}"
                     @click="handleChoice(choice.label, choice.enabled)"
                 >
                     {{ choice.label }}
                 </button>
+                </div>
             </div>
         </div>
     </div>
