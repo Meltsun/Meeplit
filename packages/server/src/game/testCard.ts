@@ -5,9 +5,6 @@ export class TestCard extends Card{
     img= "/assets/test.png"
     name= "测试卡牌"
     description_url= undefined;
-    constructor(public id: number){
-        super();
-    }
     override play(): void {
         console.log("使用了", this.name);
     }

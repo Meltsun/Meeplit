@@ -13,7 +13,7 @@ const renderedMarkdown = computed(() => markdown.render(text || ''));
 </script>
 
 <template>
-  <div class="prose prose-sm max-w-none text-[#1f2f4a]"  v-html="renderedMarkdown" />
+  <div class="prose prose-sm max-w-none w-full" v-html="renderedMarkdown" />
 </template>
 
 <style scoped>

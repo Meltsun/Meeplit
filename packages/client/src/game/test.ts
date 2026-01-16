@@ -20,7 +20,7 @@ export async function test(c:GameService){
             prompt:"测试",
             choices:["选项一","选项二","选项三"],
             timeoutMs:99999*1000,
-            defaultChoice:"未选择"
+            defaultChoice:"未选择",
         }
     )
 }

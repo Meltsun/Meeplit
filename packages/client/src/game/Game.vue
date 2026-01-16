@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, onMounted } from 'vue';
 
-import {Layout,GameInfo,Ask,Player} from '@/game/views'
+import {Layout,GameInfo,Ask,Player,Board} from '@/game/views'
 import { ConnectionManager } from '@/game/ConnectionManager';
 import {useGameService} from '@/game/GameController';
 import {test} from '@/game/test'
@@ -44,8 +44,15 @@ onUnmounted(()=>{
         <template #gameInfo>
             <GameInfo :text="gameInfo"/>
         </template>
-        <template #ask>
-            <Ask ref="inputComponent"/>   
+        <template #board>
+            <Board>
+                <template #cards>
+                    <!-- 卡牌显示区域 -->
+                </template>
+                <template #ask>
+                    <Ask ref="inputComponent"/>
+                </template>
+            </Board>
         </template>
         <template #player>
             <Player ref="playerComponent" :cards="handCards" :maxSelection="maxSelection"/>

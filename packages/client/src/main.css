@@ -1,21 +1,36 @@
-/* Global card list animations for TransitionGroup name="card" */
-.card-enter-from,
-.card-leave-to {
-	opacity: 0;
-	transform: translateY(12px);
+/* 缩放容器：根据窗口尺寸自适应缩放整个应用
+ * 基础分辨率：1440x810 (16:9)
+ * 通过transform-origin在中心缩放，保持宽高比 */
+:root {
+	/* 基础字体大小为 16px */
+	font-size: 18px; /* 设置根元素的字体大小为16像素 */
 }
 
-.card-enter-active,
-.card-leave-active {
-	transition: opacity 220ms ease, transform 220ms ease;
+html,
+body,
+#app {
+	width: 100%; /* 设置宽度为100% */
+	height: 100%; /* 设置高度为100% */
+	margin: 0; /* 去除默认外边距 */
+	padding: 0; /* 去除默认内边距 */
 }
 
-.card-leave-active {
-	transform: translateY(-12px);
+#app {
+	display: flex; /* 使用flex布局 */
+	align-items: center; /* 垂直居中对齐子元素 */
+	justify-content: center; /* 水平居中对齐子元素 */
+	background: #fff; /* 设置背景颜色为白色 */
 }
 
-.card-move {
-	transition: transform 220ms ease;
+/* 使用 CSS 容器查询的替代方案：通过 viewport 缩放
+   设置基础尺寸后，使用 scale 根据实际窗口缩放 */
+#app > * {
+	width: 1440px; /* 设置子元素的宽度为1440像素 */
+	height: 810px; /* 设置子元素的高度为810像素 */
+	flex-shrink: 0; /* 防止子元素缩小 */
+	transform-origin: center center; /* 设置缩放的原点为中心 */
+	/* 缩放由 JavaScript 在 main.ts 中动态计算 */
 }
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
+
+@import "tailwindcss"; /* 导入Tailwind CSS库 */
+@plugin "@tailwindcss/typography"; /* 使用Tailwind CSS的排版插件 */

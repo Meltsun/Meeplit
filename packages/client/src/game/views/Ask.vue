@@ -14,7 +14,7 @@ const promptText = ref('');
 const choiceItemsRef = ref<ChoiceItem[]>([]);
 let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-// 纵向两行：上方提示 2/5，下方按钮区域 3/5
+// 贴底部显示：高度由文案和按钮行数自适应
 defineExpose({
     getInput: async function (options: {
         prompt: string;
@@ -77,33 +77,24 @@ function handleChoice(label:string,enabled:boolean): void {
 </script>
 
 <template>
-    <div class="h-full w-full flex flex-col min-h-0 overflow-hidden">
-        <div
-            v-if="isVisible"
-            class="h-full w-full flex flex-col min-h-0 overflow-hidden"
-        >
-            <!-- 上方提示：占高度的 2/5，字号使用较小的 vw + clamp 控制 -->
-            <div class="flex-2 flex items-end justify-center px-4 pb-1 min-h-0">
-                <div class="text-center font-semibold text-slate-800 leading-tight text-[clamp(14px,1.5vw,22px)]">
+    <div v-if="isVisible" class="w-full flex flex-col gap-2 px-4 py-3">
+        <div class="mx-auto flex w-full max-w-200 flex-col gap-2">
+                <div class="text-center font-semibold text-slate-800 leading-6 text-lg">
                     {{ promptText }}
                 </div>
-            </div>
 
-            <!-- 下方按钮区域：占高度的 3/5，横向排布，按钮固定最小宽度但可随文本增长 -->
-            <div class="flex-3 min-h-0 overflow-hidden px-4">
-                <div class="flex flex-wrap gap-3 items-start content-start justify-center h-full w-full">
-                <button
-                    v-for="(choice, idx) in choiceItemsRef"
-                    :key="idx"
-                    class="flex-none w-auto min-w-30 rounded-lg border border-slate-300 bg-slate-50 px-[clamp(12px,2vw,18px)] py-2 text-[clamp(12px,1.4vw,16px)] font-medium text-slate-800 whitespace-nowrap transition hover:border-slate-400 hover:bg-white focus:outline-none focus-visible:ring focus-visible:ring-blue-400"
-                    :disabled="!choice.enabled"
-                    :class="{ 'opacity-60 cursor-not-allowed': !choice.enabled}"
-                    @click="handleChoice(choice.label, choice.enabled)"
-                >
-                    {{ choice.label }}
-                </button>
+                <div class="flex flex-wrap gap-3 items-center justify-center">
+                    <button
+                        v-for="(choice, idx) in choiceItemsRef"
+                        :key="idx"
+                        class="flex-none w-auto min-w-30 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-base font-medium text-slate-800 whitespace-nowrap transition hover:border-slate-400 hover:bg-white focus:outline-none focus-visible:ring focus-visible:ring-blue-400"
+                        :disabled="!choice.enabled"
+                        :class="{ 'opacity-60 cursor-not-allowed': !choice.enabled}"
+                        @click="handleChoice(choice.label, choice.enabled)"
+                    >
+                        {{ choice.label }}
+                    </button>
                 </div>
-            </div>
         </div>
     </div>
 </template>

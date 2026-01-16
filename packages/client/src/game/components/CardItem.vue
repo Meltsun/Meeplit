@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'toggle'): void;
-    (e: 'hover', cardId: number): void;
+    (e: 'hover', cardId: string): void;
     (e: 'unhover'): void;
 }>();
 
@@ -51,7 +51,7 @@ const toggleInfo = () => {
     <div
         class="card-item h-full shrink-0 flex flex-col items-center justify-center transition-transform duration-200 rounded-lg relative"
         :class="[
-            disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-105',
+            disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:brightness-110',
             { 'ring-4 ring-[#3167cd]': selected },
         ]"
         @mouseenter="handleMouseEnter"

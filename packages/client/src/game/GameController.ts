@@ -1,17 +1,21 @@
-import { ref, shallowRef,Ref, computed } from 'vue';
+import { ref, shallowRef,computed, ShallowRef} from 'vue';
 import type { Card } from "@meeplit/shared/game";
 import {Ask,Player} from '@/game/views'
+
+function useCompRef<T extends new (...args: any) => any>(comp: T): ShallowRef<InstanceType<T>> {
+    return shallowRef(undefined!);
+}
 
 function makeInitialState() {
     return {
         // 左上角游戏信息
         gameInfo: ref('default game info text'),  
         // 手牌
-        playerComponent: shallowRef<typeof Player>(undefined!),
+        playerComponent: useCompRef(Player),
         handCards: ref<Card[]>([]),
         maxSelection: ref<number>(0),
-        // 响应读条
-        inputComponent: shallowRef<typeof Ask>(undefined!),
+        // 输入组件引用
+        inputComponent: useCompRef(Ask),
     }
 }
 
@@ -23,9 +27,7 @@ export function useGameService() {
 }
 
 export default class GameService {
-    constructor(private state:ReturnType<typeof makeInitialState>){
-        
-    }
+    constructor(private state:ReturnType<typeof makeInitialState>){}
     // --- RPC 服务接口实现 ---
     // 这些方法将被暴露给服务器调用
     public setGameInfo(text: string): void {
@@ -39,10 +41,6 @@ export default class GameService {
         columns?: number;
         defaultChoice: string;
     }): Promise<string> {
-        if (!this.state.inputComponent.value) {
-            console.warn("Input component not mounted");
-            return "";
-        }
         return this.state.inputComponent.value.getInput(options);
     }
 
@@ -85,3 +83,4 @@ export default class GameService {
         return this.state.playerComponent.value.getSelectedCards()
     }
 }
+

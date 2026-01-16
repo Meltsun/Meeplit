@@ -9,7 +9,7 @@ const props = defineProps<{
     selectableCardIds?: Array<Card['id']>;
 }>();
 
-const hoveredCardId = ref<number | null>(null);
+const hoveredCardId = ref<string | null>(null);
 const selectedIndices = ref<number[]>([]);
 
 watch(() => props.maxSelection, () => {
@@ -72,6 +72,3 @@ defineExpose({
         </div>
     </div>
 </template>
-
-<style scoped>
-</style>
