@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onUnmounted, onMounted } from 'vue';
 
-import {Layout,GameInfo,Ask,Player,Board} from '@/game/views'
+import {Layout,GameInfo,Ask,Player,Board,Chat} from '@/game/views'
 import { ConnectionManager } from '@/game/ConnectionManager';
-import {useGameService} from '@/game/GameController';
+import {useGameService} from '@/game/GameService';
 import {test} from '@/game/test'
 
 // 1. 初始化 service
@@ -16,6 +16,7 @@ const {
     gameInfo, 
     handCards, 
     maxSelection,
+    chatMessages,
     // 这里的 ref 将被绑定到模板中的组件
     inputComponent,
     playerComponent 
@@ -37,12 +38,22 @@ onUnmounted(()=>{
     manager.disconnect();
 });
 
+async function onSendChat(text: string){
+    if(import.meta.env.VITE_TEST_MODE=== 'true'){
+        console.log("Send chat message:", text)
+        return
+    }
+    await manager.sendChatMessage(text)
+}
 </script>
 
 <template>
     <Layout>
         <template #gameInfo>
             <GameInfo :text="gameInfo"/>
+        </template>
+        <template #chat>
+            <Chat :messages="chatMessages" @send="onSendChat"/>
         </template>
         <template #board>
             <Board>

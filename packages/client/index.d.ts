@@ -1,4 +1,4 @@
-import GameService from '@/game/GameController';
+import GameService from '@/game/GameService';
 import type { Ref, ShallowRef } from 'vue';
 
 export type WithoutRefs<T> = {

@@ -110,7 +110,12 @@ function reviveRpcResponse(res: RpcResponse){
 export class RemoteClient<T extends Record<string, any>> {
 	constructor(
 		private socket: Socket<ClientToServerEvents,ServerToClientEvents>,
-	){}
+	){
+		socket.on("chat", (message: string,ack) => {
+			console.log("收到聊天消息:", message);
+			ack();
+		})
+	}
 
 	public handleRequest<R = any>(
 		req:RpcRequest<string, any[], R>,

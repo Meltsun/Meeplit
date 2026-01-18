@@ -1,7 +1,9 @@
 import { ref, shallowRef,computed, ShallowRef} from 'vue';
 import type { Card } from "@meeplit/shared/game";
 import {Ask,Player} from '@/game/views'
+import type { ChatMessage } from "@meeplit/shared/chat";
 
+// 创建一个引用，且认为它被正确赋值
 function useCompRef<T extends new (...args: any) => any>(comp: T): ShallowRef<InstanceType<T>> {
     return shallowRef(undefined!);
 }
@@ -16,6 +18,8 @@ function makeInitialState() {
         maxSelection: ref<number>(0),
         // 输入组件引用
         inputComponent: useCompRef(Ask),
+        // 聊天记录
+        chatMessages: ref<ChatMessage[]>([]),
     }
 }
 
@@ -26,6 +30,7 @@ export function useGameService() {
     return {state,gameService};
 }
 
+//必须在mount之后再调用方法
 export default class GameService {
     constructor(private state:ReturnType<typeof makeInitialState>){}
     // --- RPC 服务接口实现 ---
@@ -81,6 +86,11 @@ export default class GameService {
 
     public getSelectedCards(): Card[] {
         return this.state.playerComponent.value.getSelectedCards()
+    }
+
+    // --- 聊天：供服务器调用以新增消息 ---
+    public addChatMessage(msg: ChatMessage): void {
+        this.state.chatMessages.value.push(msg);
     }
 }
 

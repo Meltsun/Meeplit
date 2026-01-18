@@ -60,7 +60,7 @@ export interface ServerToClientEvents{
 }
 
 export interface ClientToServerEvents {
-    "chat": (message: string) => void;
+    "chat": (message: string,ack:()=>void) => void;
 }
 
 

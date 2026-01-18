@@ -9,6 +9,9 @@
     },
     "./game": {
       "import": "./game.ts"
+    },
+    "./chat": {
+      "import": "./chat.ts"
     }
   },
   "dependencies": {

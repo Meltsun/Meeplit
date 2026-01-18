@@ -40,8 +40,9 @@ export class ConnectionManager{
         })
     }
 
-    private sendChatMessage(message: string): void {
-        this.socket.emit("chat", message);
+    public async sendChatMessage(message: string): Promise<void> {
+        await this.socket.emitWithAck("chat", message);
+        return
     }
 }
 

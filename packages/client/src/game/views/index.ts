@@ -3,11 +3,13 @@ import GameInfo from '@/game/views/GameInfo.vue'
 import Ask from '@/game/views/Ask.vue'
 import Board from '@/game/views/Board.vue'
 import Player from '@/game/views/Player.vue';
+import Chat from '@/game/views/Chat.vue';
 
 export {
     Layout,
     GameInfo,
     Ask,
     Board,
-    Player
+    Player,
+    Chat
 }
