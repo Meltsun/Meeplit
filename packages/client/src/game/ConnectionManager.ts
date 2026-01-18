@@ -4,8 +4,10 @@ import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,Cl
 export class ConnectionManager{
     private socket!: Socket<ServerToClientEvents,ClientToServerEvents>;
 
-    public connect(url:string): void {
-        this.socket = io(url)
+    public connect(url:string, sessionId?: string): void {
+        this.socket = io(url, {
+            auth: sessionId ? { sessionId } : undefined,
+        });
     }
 
     public disconnect(): void {

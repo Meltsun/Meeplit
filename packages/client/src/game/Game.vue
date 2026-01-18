@@ -8,6 +8,12 @@ import {test} from '@/game/test'
 
 // 1. 初始化 service
 // 所有的游戏状态和逻辑现在都由 Controller 管理
+const props = defineProps<{
+    wsUrl: string;
+    sessionId: string;
+    active?: boolean;
+}>();
+
 const {state,gameService} = useGameService();
 
 // 2. 获取响应式状态以供模板使用
@@ -25,13 +31,11 @@ const {
 const manager = new ConnectionManager()
 
 onMounted(()=>{
-    if(import.meta.env.VITE_TEST_MODE=== 'true'){
-        test(gameService)
-        return
+    if (props.active !== false) {
+        manager.connect(props.wsUrl, props.sessionId);
+        // 直接暴露 Controller 实例上的公共方法
+        manager.exposeRpcObject(gameService);
     }
-    manager.connect(`ws://${import.meta.env.VITE_WS_HOST}:${import.meta.env.VITE_WS_PORT}`);
-    // 直接暴露 Controller 实例上的公共方法
-    manager.exposeRpcObject(gameService);
 });
 
 onUnmounted(()=>{
@@ -39,10 +43,6 @@ onUnmounted(()=>{
 });
 
 async function onSendChat(text: string){
-    if(import.meta.env.VITE_TEST_MODE=== 'true'){
-        console.log("Send chat message:", text)
-        return
-    }
     await manager.sendChatMessage(text)
 }
 </script>

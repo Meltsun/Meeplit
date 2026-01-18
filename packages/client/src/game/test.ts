@@ -53,7 +53,6 @@ export async function test(c:GameService){
                     timeStamp: Date.now(),
                     text: `第 ${(i/10)+1} 个阶段`
                 })
-                console.log("添加分割线")
             }
         }, 1000 * (i + 1))
     }
