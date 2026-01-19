@@ -24,6 +24,7 @@ const rooms = ref<RoomSummary[]>([]);
 const currentRoom = ref<RoomSummary | null>(null);
 const statusText = ref('');
 const loginName = ref('');
+const loginPassword = ref('');
 const newRoomName = ref('');
 const roomCapacity = ref(4);
 const logoutLabel = computed(() => user.value ? `退出(${user.value.name})` : '退出');
@@ -69,14 +70,14 @@ async function restoreSession() {
 }
 
 async function login() {
-    if (!loginName.value.trim()) {
-        statusText.value = '请输入昵称';
+    if (!loginName.value.trim() || !loginPassword.value.trim()) {
+        statusText.value = '请输入用户名和密码';
         return;
     }
     try {
         const res = await api<{ sessionId: string; user: User }>('/api/login', {
             method: 'POST',
-            body: JSON.stringify({ name: loginName.value.trim() })
+            body: JSON.stringify({ name: loginName.value.trim(), password: loginPassword.value.trim() })
         });
         setSession(res.sessionId);
         user.value = res.user;
@@ -156,7 +157,9 @@ const viewProps = computed(() => {
         return {
             statusText: statusText.value,
             loginName: loginName.value,
+            loginPassword: loginPassword.value,
             'onUpdate:loginName': (val: string) => (loginName.value = val),
+            'onUpdate:loginPassword': (val: string) => (loginPassword.value = val),
             onLogin: login,
         };
     }

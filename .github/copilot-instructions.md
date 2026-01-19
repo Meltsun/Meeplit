@@ -1,33 +1,30 @@
 ## Meeplit Copilot Notes
-
+请用中文回答
 ### Big picture
-- Monorepo (Bun + Vite) for a reverse-RPC tabletop demo: server drives gameplay by invoking browser-exposed methods; client does not initiate RPC to server.
-- Socket.io with ack-based RPC and batching; Hono on Bun serves static assets and CORS gateway alongside the WS engine.
-- Shared protocol/types in [packages/shared](packages/shared) (RPC contracts and `Card` base).
+- Monorepo using Bun runtime with Vite + Vue 3 client and Hono + Socket.io server; reverse-RPC means the server drives gameplay by invoking browser-exposed methods (browser never initiates RPC back).
+- Shared protocol/types live in [packages/shared](packages/shared) for RPC envelopes, revivers, `Card` base, and chat shapes; keep cross-cutting types here.
+- Static assets are served from [packages/assets](packages/assets) at `/assets/*` (absolute root currently `D:/Script/Meeplit/packages`).
 
 ### Dev workflow
-- Root scripts: `bun run s` starts the Bun server at [packages/server/main.ts](packages/server/main.ts); `bun run c` launches Vite using [packages/client/vite.config.ts](packages/client/vite.config.ts). Client also has `dev|build|preview|type-check`.
-- Env from root `.env` via [packages/server/src/env.ts](packages/server/src/env.ts): `VITE_WS_HOST`, `VITE_WS_PORT`, `VITE_CLIENT_ORIGIN`; client dev port from `VITE_CLIENT_ORIGIN_PORT` with `envDir` pointed to repo root.
-- Static assets are mounted at `/assets/*` from [packages](packages) by Hono; place images in [packages/assets](packages/assets) and reference like `/assets/test.png`.
+- Package manager is Bun: `bun run s` (watch server [packages/server/main.ts](packages/server/main.ts)), `bun run c` (Vite via [packages/client/vite.config.ts](packages/client/vite.config.ts)), `bun test` hits [packages/server/test.ts](packages/server/test.ts). Add/adjust tests when touching server logic.
+- Env comes from root `.env` read in [packages/server/src/env.ts](packages/server/src/env.ts): `VITE_WS_HOST`, `VITE_WS_PORT`, `VITE_CLIENT_ORIGIN`, `VITE_CLIENT_ORIGIN_PORT` (client dev server port). Client `envDir` also points to repo root.
+- Tailwind CSS v4 is enabled via `@tailwindcss/vite`; utilities like `w-90` alias `w-[360px]` are valid.
 
-### Client RPC surface
-- [packages/client/src/game/ConnectionManager.ts](packages/client/src/game/ConnectionManager.ts) wires `rpc-call` (ack required) and `rpc-emit`; `safeCallMethod` wraps calls, coercing `undefined` results to `null` to preserve acks. Supports `rpc-batch` (`sequential|parallel`).
-- Exposed service is `GameService` used in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue) via `manager.exposeRpcObject(gameService)`.
-- `GameService` methods: `setGameInfo`, `ask(...): Promise<string>`, `ping`, `noReturnTest`, `updateCard(cards)` updates `handCards`, `playCard({cardnum, timeoutMs}): Promise<Card[]>` limits selection, prompts via `Ask`, returns selected or `[]`, and resets `maxSelection`; `getSelectedCards()` reads from `Player`.
-- UI layout with slots in [packages/client/src/game/views/Layout.vue](packages/client/src/game/views/Layout.vue) (`gameInfo`, `chat`, `board`, `player`); `Chat` view is slotted and `ConnectionManager` includes a `chat` emit helper.
+### Client surface
+- App flow in [packages/client/src/Main.vue](packages/client/src/Main.vue): `auth` → `lobby` → `play`; session id is saved to `localStorage` and sent as `x-session-id` for HTTP. Auth bindings live in [packages/client/src/views/AuthView.vue](packages/client/src/views/AuthView.vue).
+- Lobby HTTP calls: `/api/rooms`, `/api/rooms/:id/join`, `/api/rooms` POST (capacity+name); readiness occurs after WS bind.
+- Gameplay wiring in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue) connects `ConnectionManager` to `GameService`; chat uses `sendChatMessage()` which requires socket ack.
+- RPC handler [packages/client/src/game/ConnectionManager.ts](packages/client/src/game/ConnectionManager.ts) routes `rpc-call`/`rpc-emit` to `safeCallMethod`; it coerces `undefined` to `null` for acks and supports `rpc-batch` sequential/parallel dispatch.
+- Server-invokable methods in [packages/client/src/game/GameService.ts](packages/client/src/game/GameService.ts): `setGameInfo`, `ask` via [packages/client/src/game/views/Ask.vue](packages/client/src/game/views/Ask.vue), `ping`, `noReturnTest`, `updateCard`, `playCard({cardnum, timeoutMs})` limiting selection then resetting `maxSelection`, `getSelectedCards`, `addChatMessage` to append chat.
+- UI shell targets 1440×810 and scales in [packages/client/src/main.ts](packages/client/src/main.ts); slots in [packages/client/src/game/views/Layout.vue](packages/client/src/game/views/Layout.vue) feed `gameInfo`, `chat`, `board`, `player` regions.
 
-### Server RPC caller
-- [packages/server/src/playerClient.ts](packages/server/src/playerClient.ts) provides `RemoteClient<T>`: `emit()` fire-and-forget; `call(timeout, default)` awaits ack with timeout/default fallback; `emitBatch`/`callBatch`/`batchAdvanced` send `rpc-batch` with `sequential|parallel` and can select a specific call’s result.
-- Requests use `markRevivablePayload` so class instances round-trip; responses are handled by `handleResponse` and `reviveRehydratedValue`, mapping errors to `RpcErrorCode`.
-- Example in [packages/server/main.ts](packages/server/main.ts): on socket connection, create `RemoteClient<GameService>`, `emit().updateCard(...)` and `emit().setGameInfo(...)`, then `call(15000, []).playCard({ cardnum: 1, timeoutMs: 10000 })` and run `play()` on returned cards.
-- Hono serves `/assets/*` from repo `packages` and CORS for `CLIENT_ORIGIN` alongside the WS handler.
+### Server surface
+- HTTP API in [packages/server/main.ts](packages/server/main.ts): `/api/login`, `/api/me`, `/api/rooms` list/create, `/api/rooms/:id/join`, `/api/rooms/:id/ready`, `/api/rooms/:id/state`; all expect `x-session-id`. Accounts seeded in SQLite via [packages/server/src/AccountStore.ts](packages/server/src/AccountStore.ts) for users `alice|bob|charlie` with `alice123|bob123|charlie123`.
+- Player/session handling in [packages/server/src/PlayerManager.ts](packages/server/src/PlayerManager.ts) + [packages/server/src/Player.ts](packages/server/src/Player.ts); sockets bind on connect using `sessionId` from auth/query.
+- Room lifecycle in [packages/server/src/RoomManager.ts](packages/server/src/RoomManager.ts); `markReady` flips to `playing` and calls `onAllReadyStart` (stub `startRoomGame` in main for now).
+- RPC helper [packages/server/src/playerClient.ts](packages/server/src/playerClient.ts) offers `emit`, `call(timeout, default)`, `emitBatch`/`callBatch`/`batchAdvanced` (return the picked request). Use `markRevivablePayload` before sending class instances and `reviveRehydratedValue` on responses.
 
-### Shared protocol
-- [packages/shared/rpc.ts](packages/shared/rpc.ts) defines `RPC_BATCH_METHOD_NAME`, `RpcRequest`/`RpcResponse`, socket event contracts (`rpc-call`, `rpc-emit`, `chat`), and revivable helpers (`@Revivable`, `markRevivablePayload`, `reviveRehydratedValue`).
-- [packages/shared/game.ts](packages/shared/game.ts) declares abstract `Card { id, img, name, play() }`; server card sample [packages/server/src/game/testCard.ts](packages/server/src/game/testCard.ts) sets `img: "/assets/test.png"` and overrides `play()`.
-
-### Conventions & extending
-- Client-exposed methods must not return `undefined` (use `null`), or acks may be lost.
-- When crossing the wire with class instances, decorate bases with `@Revivable` so prototypes survive; mark outgoing payloads and revive incoming responses.
-- Add new client-callable methods in `GameService` and expose via `ConnectionManager.exposeRpcObject(gameService)` in [packages/client/src/game/Game.vue](packages/client/src/game/Game.vue).
-- On server, prefer `RemoteClient.call(timeoutMs, default)` for user input with timeouts; use batch helpers for grouped calls and specify `sequential|parallel`.
+### Shared conventions
+- [packages/shared/rpc.ts](packages/shared/rpc.ts) defines RPC envelopes, `RPCErrorCode`, socket event contracts, and `RPC_BATCH_METHOD_NAME`.
+- [packages/shared/game.ts](packages/shared/game.ts) has `Card` base (auto `id`, `img`, `name`, optional `description_url`, `play` hook); sample card at [packages/server/src/game/testCard.ts](packages/server/src/game/testCard.ts) uses `/assets/test.png`.
+- Client-exposed RPC methods must never return `undefined`; return `null` instead so acks are honored. Revivable types must be decorated with `@Revivable` and wrapped with `markRevivablePayload` when sent.

@@ -21,18 +21,19 @@ export default class AccountStore {
             fs.mkdirSync(dir, { recursive: true });
         }
         this.db = new Database(dbPath);
+        this.db.run("PRAGMA journal_mode=WAL");
         this.init();
     }
 
     private init() {
         this.db.run(
             `CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        name TEXT UNIQUE NOT NULL,
-        password_salt TEXT NOT NULL,
-        password_hash TEXT NOT NULL,
-        created_at INTEGER NOT NULL
-      )`
+            id TEXT PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL,
+            password_salt TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+            )`
         );
 
         // Seed a few accounts if empty
@@ -58,6 +59,9 @@ export default class AccountStore {
             { name: "alice", password: "alice123" },
             { name: "bob", password: "bob123" },
             { name: "charlie", password: "charlie123" },
+            { name: "1", password: "1" },
+            { name: "2", password: "2" },
+            { name: "3", password: "3" },
         ];
         const insert = this.db.query(
             "INSERT INTO users (id, name, password_salt, password_hash, created_at) VALUES (?, ?, ?, ?, ?)"
@@ -69,6 +73,10 @@ export default class AccountStore {
             const hash = this.hashPassword(u.password, salt);
             insert.run(id, u.name, salt, hash, now);
         }
+    }
+
+    close() {
+        this.db.close();
     }
 
     getUserByName(name: string): Account | undefined {

@@ -35,6 +35,15 @@ export type RpcRequest<
 
 export type BatchRpcquest = RpcRequest<'rpc-batch',BatchRpcquestParams>;
 
+export type RpcReturnMode = 'emit' | 'call';
+
+export type RpcRequestMeta = {
+	returnMode: RpcReturnMode;
+};
+
+// 预留扩展返回的元信息，目前为空结构
+export type RpcResponseMeta = Record<string, never>;
+
 export class RpcResponse<R=any>{
 	private constructor(
 		public result:R,
@@ -54,9 +63,8 @@ export class RpcResponse<R=any>{
 export type BatchRpcResponse= RpcResponse<RpcResponse[]>;
 
 export interface ServerToClientEvents{
-    "rpc-call": (req:RpcRequest,ack:(res:RpcResponse)=>void) => void;
-	"rpc-emit": (req:RpcRequest) => void;
-    "chat": (message: string) => void;
+	"rpc": (req:RpcRequest, reqMeta: RpcRequestMeta, ack?: (res:RpcResponse, resMeta: RpcResponseMeta)=>void) => void;
+	"chat": (message: string) => void;
 }
 
 export interface ClientToServerEvents {

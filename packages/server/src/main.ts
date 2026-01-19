@@ -4,12 +4,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 
-import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./src/env";
-import * as Cards from "./src/game";
-import Player from "./src/Player";
-import PlayerManager from "./src/PlayerManager";
-import RoomManager, { Room } from "./src/RoomManager";
-import AccountStore from "./src/AccountStore";
+import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./env";
+import * as Cards from "./game";
+import Player from "./Player";
+import PlayerManager from "./PlayerManager";
+import RoomManager, { Room } from "./RoomManager";
+import AccountStore from "./AccountStore";
 
 import type GameService from "@meeplit/client"
 

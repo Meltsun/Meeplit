@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError} from "@meeplit/shared/rpc"
+import { RPC_BATCH_METHOD_NAME,RPCErrorCode, RpcResponse,ServerToClientEvents,ClientToServerEvents,RpcRequest,BatchRpcquestParams, RpcError, RpcRequestMeta, RpcResponseMeta} from "@meeplit/shared/rpc"
 
 export class ConnectionManager{
     private socket!: Socket<ServerToClientEvents,ClientToServerEvents>;
@@ -17,29 +17,26 @@ export class ConnectionManager{
     }
 
     exposeRpcObject(target:Record<string, any>): void {
-        this.socket.on("rpc-call", async (req, ack) => {
-            if(ack===undefined || typeof ack !== "function"){
-                console.error(`rpc-call缺少ack ${req}`);
-                return
+        this.socket.on("rpc", async (req, reqMeta, ack) => {
+            const returnMode = isRpcRequestMeta(reqMeta) ? reqMeta.returnMode : 'emit';
+
+            if(returnMode === 'call' && (ack===undefined || typeof ack !== "function")){
+                console.error(`rpc(call)缺少ack ${req}`);
+                return;
             }
             try {
                 const res = await safeCallMethod(target, req);
                 if(res.error) console.error("reverse-rpc error:", res.error.message);
-                ack(res);
+                if(returnMode === 'call'){
+                    (ack as (res:RpcResponse, meta:RpcResponseMeta)=>void)(res, {} as RpcResponseMeta);
+                }
             } catch (err) {
                 console.error("reverse-rpc client socket handler error:", err);
-                ack(RpcResponse.fail(RPCErrorCode.InternalError, (err as Error).message));
+                if(returnMode === 'call'){
+                    (ack as (res:RpcResponse, meta:RpcResponseMeta)=>void)(RpcResponse.fail(RPCErrorCode.InternalError, (err as Error).message), {} as RpcResponseMeta);
+                }
             }
         });
-
-        this.socket.on("rpc-emit", async (req) => {
-            try {
-                const res = await safeCallMethod(target, req);
-                if(res.error) console.error("reverse-rpc error:", res.error.message);
-            } catch (err) {
-                console.error("reverse-rpc client socket handler error:", err);
-            }
-        })
     }
 
     public async sendChatMessage(message: string): Promise<void> {
@@ -143,6 +140,12 @@ function isRpcRequest(rpcRequest: unknown):rpcRequest is RpcRequest {
     if (typeof (rpcRequest as any).method !== "string") return false;
     if (!Array.isArray((rpcRequest as any).params)) return false;
     return true;
+}
+
+const isRpcRequestMeta = (meta: unknown): meta is RpcRequestMeta => {
+    if(!meta || typeof meta !== 'object') return false;
+    const mode = (meta as any).returnMode;
+    return mode === 'emit' || mode === 'call';
 }
 
 function isBatchRpcRequests(params: any[]):params is BatchRpcquestParams{
