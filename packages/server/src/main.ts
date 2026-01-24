@@ -34,10 +34,10 @@ app.use('*', cors());
 app.use('/assets/*', serveStatic({ root:"D:/Script/Meeplit/packages" }));
 
 // Managers
-const players = new PlayerManager();
+const playerManager = new PlayerManager();
 const accounts = new AccountStore("./packages/server/data/accounts.db");
 const rooms = new RoomManager({
-    randomId: (p) => players.randomId(p),
+    randomId: (p) => playerManager.randomId(p),
     onAllReadyStart: (room) => startRoomGame(room),
 });
 
@@ -55,7 +55,7 @@ app.post('/api/login', async (c) => {
         const account = accounts.verifyCredentials(name, password);
         if (!account) return c.json({ error: 'InvalidCredentials' }, 401);
 
-        const player = players.create(account.name);
+        const player = playerManager.create(account.name);
         // TODO: Set cookie instead of requiring header (hono/cookie)
         return c.json({ sessionId: player.sessionId, user: { id: player.playerId, name: player.name } });
     } catch {
@@ -66,7 +66,7 @@ app.post('/api/login', async (c) => {
 // Who am I
 app.get('/api/me', (c) => {
     const sid = c.req.header('x-session-id');
-    const player = players.getBySession(sid ?? undefined);
+    const player = playerManager.getBySession(sid ?? undefined);
     if (!player) return c.json({ user: null });
     return c.json({ user: { id: player.playerId, name: player.name }, roomId: player.roomId ?? null });
 });
@@ -79,7 +79,7 @@ app.get('/api/rooms', (c) => {
 // Create room
 app.post('/api/rooms', async (c) => {
     const sid = c.req.header('x-session-id');
-    const player = players.getBySession(sid ?? undefined);
+    const player = playerManager.getBySession(sid ?? undefined);
     if (!player) return c.json({ error: 'Unauthorized' }, 401);
     try {
         const body = await c.req.json<{ name?: string,capacity:number }>();
@@ -93,25 +93,25 @@ app.post('/api/rooms', async (c) => {
 // Join room (HTTP-level membership; RPC binding occurs on socket connection)
 app.post('/api/rooms/:id/join', async (c) => {
     const sid = c.req.header('x-session-id');
-    const player = players.getBySession(sid ?? undefined);
+    const player = playerManager.getBySession(sid ?? undefined);
     if (!player) return c.json({ error: 'Unauthorized' }, 401);
     const id = c.req.param('id');
-    const room = rooms.join(id, player);
-    if (!room) return c.json({ error: 'RoomNotFound' }, 404);
+    const joinRes = rooms.join(id, player);
+    if (!joinRes) return c.json({ error: 'RoomNotFound' }, 404);
     // NOTE: RPC binding happens when the player connects the socket with this session.
-    return c.json({ ok: true, room: rooms.summaryOf(room) });
+    return c.json({ ok: true, room: rooms.summaryOf(joinRes.room) });
 });
 
 // Mark ready within a room
 app.post('/api/rooms/:id/ready', async (c) => {
     const sid = c.req.header('x-session-id');
-    const player = players.getBySession(sid ?? undefined);
+    const player = playerManager.getBySession(sid ?? undefined);
     if (!player) return c.json({ error: 'Unauthorized' }, 401);
     const id = c.req.param('id');
     if (!player.client) return c.json({ error: 'SocketNotConnected' }, 400);
     const { room } = rooms.markReady(id, player);
     if (!room) return c.json({ error: 'RoomNotFound' }, 404);
-    return c.json({ ok: true, ready: room.ready.size, size: room.clients.size, state: room.state });
+    return c.json({ ok: true, ready: room.ready.size, size: room.playersMap.size, state: room.state });
 });
 
 // Room state
@@ -143,18 +143,62 @@ socketioServer.on("connection", async (socket) => {
     const sid = (socket.handshake.auth as any)?.sessionId
         ?? (socket.handshake.query as any)?.sessionId;
 
-    const player = players.bindSocket(sid, socket);
-    if (player && player.roomId) {
-        const room = rooms.get(player.roomId);
+    const newPlayer = playerManager.addPlayer(sid, socket);
+    if (newPlayer && newPlayer.roomId) {
+        const room = rooms.get(newPlayer.roomId);
         if (room) {
-            room.clients.set(player.playerId, player);
-            player.client?.emit().setGameInfo(JSON.stringify(room))
+            if (newPlayer.seatIndex !== undefined && !room.playersMap.has(newPlayer.seatIndex)) {
+                room.playersMap.set(newPlayer.seatIndex, newPlayer);
+            }
+
+            const playersSnapshot = buildPlayersArray(room);
+
+            newPlayer.client?.emit().setPlayerInfo({
+                id: newPlayer.playerId,
+                name: newPlayer.name,
+            })
+
+            socket.on("chat", (message: string,ack) => {
+                console.log("收到聊天消息:", message);
+                for(const p of room.playersMap.values()){
+                    p.client?.emit().addChatMessage(
+                        {
+                            type: "player",
+                            playerId: newPlayer.playerId,
+                            playerName: newPlayer.name,
+                            text: message,
+                            timeStamp: Date.now(),
+                        }
+                    )
+                }
+            })
+
+            for(const p of room.playersMap.values()){
+                p.client?.emitBatch("sequential",(stub)=>{
+                    stub.addChatMessage(
+                        {
+                            type: "system",
+                            text: `${newPlayer.name} 加入了房间`,
+                            timeStamp: Date.now(),
+                        }
+                    )
+                    stub.setPlayers(playersSnapshot);
+                    stub.updateCard([new Cards.UnknownCard(),new Cards.TestCard()])
+                })
+            }
         }
     }
 
     socket.on("disconnect", () => {
-        const p = players.unbindSocket(socket);
-        if (p) rooms.cleanupOnDisconnect(p);
+        const p = playerManager.unbindSocket(socket);
+        if (!p) return;
+        const { room } = rooms.cleanupOnDisconnect(p);
+        if (room) {
+            const playersSnapshot = buildPlayersArray(room);
+            for (const other of room.playersMap.values()) {
+                other.client?.emit().setPlayers(playersSnapshot);
+            }
+        }
     });
 });
 
@@ -166,7 +210,15 @@ async function startRoomGame(room: Room) {
     // - Drive turns
     // - Handle timeouts and round transitions
     const sampleCards = [new Cards.TestCard(), new Cards.TestCard(), new Cards.TestCard()];
-    for (const player of room.clients.values()) {
-        player.client?.emit().setGameInfo(JSON.stringify(room))
+    for (const player of room.playersMap.values()) {
+        player.client?.emit().setGameInfo(`开始游戏${room.id}`)
     }
+}
+
+function buildPlayersArray(room: Room): Array<string | null> {
+    const arr = Array<string | null>(room.capacity).fill(null);
+    for (const [seat, player] of room.playersMap.entries()) {
+        arr[seat] = player.playerId;
+    }
+    return arr;
 }

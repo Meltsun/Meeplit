@@ -48,7 +48,7 @@ describe("PlayerManager", () => {
         const player = mgr.create("morpheus");
         const socket = createSocketStub();
 
-        const bound = mgr.bindSocket(player.sessionId, socket);
+        const bound = mgr.addPlayer(player.sessionId, socket);
         expect(bound).toBe(player);
         expect(mgr.getBySocket(socket.id)).toBe(player);
 

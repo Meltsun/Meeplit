@@ -9,3 +9,12 @@ export class TestCard extends Card{
         console.log("使用了", this.name);
     }
 };
+
+export class UnknownCard extends Card{
+    img= "/assets/未知卡牌.png"
+    name= "未知卡牌"
+    description_url= undefined;
+    override play(): void {
+        console.log("使用了", this.name);
+    }
+};

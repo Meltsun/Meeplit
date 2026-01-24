@@ -1,20 +1,3 @@
-<script setup lang="ts">
-import { ref,computed } from 'vue'
-
-// 对手数量，可在 1 ~ 7 之间调整
-const opponentCount = ref(4);
-
-// 根据数量生成对手显示数据
-const opponents = computed(() => {
-  const count = Math.min(Math.max(opponentCount.value, 1), 7);
-  return Array.from({ length: count }, (_, idx) => ({
-    id: idx,
-    label: `玩家 ${String.fromCharCode(65 + idx)}`,
-  }));
-});
-
-</script>
-
 <template>
   <div class="w-full h-full overflow-hidden bg-[#3167cd]">
       <div class="flex gap-2.5 w-full h-full p-2.5 box-border overflow-hidden">
@@ -34,15 +17,11 @@ const opponents = computed(() => {
 
       <section class="flex flex-8 flex-col gap-2.5 overflow-hidden">
         <div class="flex flex-[2.5] gap-2.5 overflow-hidden">
-          <div
-            v-for="opponent in opponents"
-            :key="opponent.id"
-            class="flex-1 bg-[#d6e4ff] text-[#0f1d3a] overflow-hidden flex items-center justify-center"
-          >
-            <slot name="opponent" :opponent="opponent">
-              {{ opponent.label }}
-            </slot>
-          </div>
+          <slot name="opponent">
+            <div class="flex-1 bg-[#d6e4ff] text-[#6b7a99] overflow-hidden flex items-center justify-center">
+              等待对手
+            </div>
+          </slot>
         </div>
 
         <div class="flex flex-5 bg-[#f0f5ff] text-[#0f1d3a] overflow-hidden flex-col">
@@ -51,7 +30,7 @@ const opponents = computed(() => {
           </slot>
         </div>
 
-        <div class="flex flex-[2.5] bg-[#e6f7ff] text-[#0f1d3a] overflow-hidden items-center justify-center">
+        <div class="flex flex-[2.5] bg-[#e6f7ff] text-[#0f1d3a] overflow-hidden items-stretch justify-center">
           <slot name="player">
             本地玩家区域
           </slot>

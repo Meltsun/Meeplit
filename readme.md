@@ -19,4 +19,7 @@ belike: `for(player of players) players.playCard()`
 3. 总之，我们的目的是“能玩就行”
 
 
-
+## TODO
+对手区
+玩家区
+server结构明确与重构

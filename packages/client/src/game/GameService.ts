@@ -1,7 +1,12 @@
-import { ref, shallowRef,computed, ShallowRef} from 'vue';
+import { ref, shallowRef, computed, ShallowRef } from 'vue';
 import type { Card } from "@meeplit/shared/game";
 import {Ask,Player} from '@/game/views'
 import type { ChatMessage } from "@meeplit/shared/chat";
+
+type PlayerInfo = {
+    id: string | null;
+    name?: string;
+};
 
 // 创建一个引用，且认为它被正确赋值
 function useCompRef<T extends new (...args: any) => any>(comp: T): ShallowRef<InstanceType<T>> {
@@ -9,18 +14,35 @@ function useCompRef<T extends new (...args: any) => any>(comp: T): ShallowRef<In
 }
 
 function makeInitialState() {
+    // 先定义基础 ref，便于 computed 引用
+    const gameInfo = ref('default game info text');
+    const playerComponent = useCompRef(Player);
+    const handCards = ref<Card[]>([]);
+    const maxSelection = ref<number>(0);
+    const inputComponent = useCompRef(Ask);
+    const chatMessages = ref<ChatMessage[]>([]);
+    const players = ref<Array<string | null>>([]);
+    const playerInfo = ref<PlayerInfo>({ id: null, name: '' });
+
+    // 根据 players 与 playerInfo 计算当前玩家座位号（index+1），找不到则返回 null
+    const seatNumber = computed<number | null>(() => {
+        const id = playerInfo.value.id;
+        if (!id) return null;
+        const idx = players.value.findIndex((p) => p === id);
+        return idx >= 0 ? idx + 1 : null;
+    });
+
     return {
-        // 左上角游戏信息
-        gameInfo: ref('default game info text'),  
-        // 手牌
-        playerComponent: useCompRef(Player),
-        handCards: ref<Card[]>([]),
-        maxSelection: ref<number>(0),
-        // 输入组件引用
-        inputComponent: useCompRef(Ask),
-        // 聊天记录
-        chatMessages: ref<ChatMessage[]>([]),
-    }
+        gameInfo,
+        playerComponent,
+        handCards,
+        maxSelection,
+        inputComponent,
+        chatMessages,
+        players,
+        playerInfo,
+        seatNumber,
+    };
 }
 
 
@@ -91,6 +113,16 @@ export default class GameService {
     // --- 聊天：供服务器调用以新增消息 ---
     public addChatMessage(msg: ChatMessage): void {
         this.state.chatMessages.value.push(msg);
+    }
+
+    public setPlayers(players: Array<string | null>): void {
+        this.state.players.value = players;
+    }
+
+    public setPlayerInfo(info: PlayerInfo): void {
+        this.state.playerInfo.value = info;
+        // 同步 Ability 显示的玩家名（图片保持默认或先前设置）
+        this.state.playerComponent.value?.setAbilityInfo(undefined, info.name || '');
     }
 }
 

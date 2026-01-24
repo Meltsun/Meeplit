@@ -7,7 +7,7 @@ export interface Room {
     name: string;
     state: RoomState;
     capacity: number;
-    clients: Map<string, Player>; // key: playerId
+    playersMap: Map<number, Player>; // key: seat index
     ready: Set<string>; // playerId that marked ready
 }
 
@@ -42,7 +42,7 @@ export default class RoomManager {
             name: (name ?? `Room ${id.slice(-4)}`).trim(),
             state: 'waiting',
             capacity: cap,
-            clients: new Map(),
+            playersMap: new Map(),
             ready: new Set(),
         };
         this.rooms.set(id, room);
@@ -63,7 +63,7 @@ export default class RoomManager {
             name: room.name,
             state: room.state,
             capacity: room.capacity,
-            size: room.clients.size,
+            size: room.playersMap.size,
             ready: room.ready.size,
         };
     }
@@ -71,11 +71,19 @@ export default class RoomManager {
     join(roomId: string, player: Player) {
         const room = this.get(roomId);
         if (!room) return undefined;
-        if (room.clients.size >= room.capacity) return undefined;
-        player.joinRoom(roomId);
-        room.clients.set(player.playerId, player);
+        if (room.playersMap.size >= room.capacity) return undefined;
+
+        const emptySeats: number[] = [];
+        for (let i = 0; i < room.capacity; i += 1) {
+            if (!room.playersMap.has(i)) emptySeats.push(i);
+        }
+        if (!emptySeats.length) return undefined;
+
+        const seat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
+        player.joinRoom(roomId, seat);
+        room.playersMap.set(seat, player);
         room.ready.delete(player.playerId);
-        return room;
+        return { room, seat };
     }
 
     markReady(roomId: string, player: Player) {
@@ -84,7 +92,7 @@ export default class RoomManager {
         if (player.roomId !== roomId) return { room, allReady: false };
         player.markReady(true);
         room.ready.add(player.playerId);
-        const allReady = room.ready.size > 0 && room.ready.size === room.clients.size;
+        const allReady = room.ready.size > 0 && room.ready.size === room.playersMap.size;
         if (allReady && room.state === 'waiting') {
             room.state = 'playing';
             // Start game loop if provided
@@ -96,15 +104,28 @@ export default class RoomManager {
     resetReady(room: Room) {
         // Clear per-player ready flags and room ready set.
         room.ready.clear();
-        for (const player of room.clients.values()) player.markReady(false);
+        for (const player of room.playersMap.values()) player.markReady(false);
         room.state = 'waiting';
     }
 
     cleanupOnDisconnect(player: Player) {
-        if (!player.roomId) return;
+        if (!player.roomId) return { room: undefined, seat: undefined };
         const room = this.rooms.get(player.roomId);
-        if (!room) return;
-        room.clients.delete(player.playerId);
+        if (!room) return { room: undefined, seat: undefined };
+
+        let seat = player.seatIndex;
+        if (seat === undefined) {
+            for (const [s, p] of room.playersMap.entries()) {
+                if (p.playerId === player.playerId) {
+                    seat = s;
+                    break;
+                }
+            }
+        }
+
+        if (seat !== undefined) room.playersMap.delete(seat);
         room.ready.delete(player.playerId);
+        player.leaveRoom();
+        return { room, seat };
     }
 }

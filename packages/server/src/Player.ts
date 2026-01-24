@@ -22,6 +22,7 @@ export default class Player {
 
     // Room membership
     roomId?: string;
+    seatIndex?: number;
     ready: boolean = false;
 
     constructor(args: { playerId: string; sessionId: string; name: string }) {
@@ -40,13 +41,15 @@ export default class Player {
         this.client = undefined;
     }
 
-    joinRoom(roomId: string) {
+    joinRoom(roomId: string, seatIndex: number) {
         this.roomId = roomId;
+        this.seatIndex = seatIndex;
         this.ready = false;
     }
 
     leaveRoom() {
         this.roomId = undefined;
+        this.seatIndex = undefined;
         this.ready = false;
     }
 

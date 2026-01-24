@@ -8,7 +8,7 @@ describe("RoomManager", () => {
         const room = rm.create(undefined, 0);
         expect(room.capacity).toBe(1);
         expect(room.state).toBe("waiting");
-        expect(room.clients.size).toBe(0);
+        expect(room.playersMap.size).toBe(0);
     });
 
     test("allows players to join when capacity permits", () => {
@@ -17,15 +17,20 @@ describe("RoomManager", () => {
         const p1 = new Player({ playerId: "p1", sessionId: "s1", name: "one" });
         const p2 = new Player({ playerId: "p2", sessionId: "s2", name: "two" });
 
-        expect(rm.join(room.id, p1)).toBe(room);
-        expect(room.clients.size).toBe(1);
+        const join1 = rm.join(room.id, p1)!;
+        expect(join1.room).toBe(room);
+        expect(join1.seat).toBeGreaterThanOrEqual(0);
+        expect(join1.seat).toBeLessThan(room.capacity);
+        expect(room.playersMap.size).toBe(1);
 
-        expect(rm.join(room.id, p2)).toBe(room);
-        expect(room.clients.size).toBe(2);
+        const join2 = rm.join(room.id, p2)!;
+        expect(join2.room).toBe(room);
+        expect(join2.seat).not.toBe(join1.seat);
+        expect(room.playersMap.size).toBe(2);
 
         const p3 = new Player({ playerId: "p3", sessionId: "s3", name: "three" });
         expect(rm.join(room.id, p3)).toBeUndefined();
-        expect(room.clients.size).toBe(2);
+        expect(room.playersMap.size).toBe(2);
     });
 
     test("marks ready, transitions to playing, and invokes start hook", () => {
@@ -54,13 +59,13 @@ describe("RoomManager", () => {
         const p1 = new Player({ playerId: "p1", sessionId: "s1", name: "one" });
         const p2 = new Player({ playerId: "p2", sessionId: "s2", name: "two" });
 
-        rm.join(room.id, p1);
+        const join1 = rm.join(room.id, p1)!;
         rm.join(room.id, p2);
         rm.markReady(room.id, p1);
         rm.markReady(room.id, p2);
 
         rm.cleanupOnDisconnect(p1);
-        expect(room.clients.has(p1.playerId)).toBe(false);
+        expect(room.playersMap.has(join1.seat)).toBe(false);
         expect(room.ready.has(p1.playerId)).toBe(false);
 
         rm.resetReady(room);

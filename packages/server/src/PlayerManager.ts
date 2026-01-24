@@ -31,7 +31,7 @@ export default class PlayerManager {
         return this.bySocket.get(socketId);
     }
 
-    bindSocket(sessionId: string | undefined, socket: Socket) {
+    addPlayer(sessionId: string | undefined, socket: Socket) {
         if (!sessionId) return undefined;
         const player = this.bySession.get(sessionId);
         if (!player) return undefined;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, onMounted } from 'vue';
 
-import {Layout,GameInfo,Ask,Player,Board,Chat} from '@/game/views'
+import {Layout,GameInfo,Ask,Player,Board,Chat,Opponent} from '@/game/views'
 import { ConnectionManager } from '@/game/ConnectionManager';
 import {useGameService} from '@/game/GameService';
 import {test} from '@/game/test'
@@ -23,6 +23,9 @@ const {
     handCards, 
     maxSelection,
     chatMessages,
+    players,
+    playerInfo,
+    seatNumber,
     // 这里的 ref 将被绑定到模板中的组件
     inputComponent,
     playerComponent 
@@ -55,6 +58,9 @@ async function onSendChat(text: string){
         <template #chat>
             <Chat :messages="chatMessages" @send="onSendChat"/>
         </template>
+        <template #opponent>
+            <Opponent :players="players" :current-player="playerInfo" />
+        </template>
         <template #board>
             <Board>
                 <template #cards>
@@ -66,7 +72,7 @@ async function onSendChat(text: string){
             </Board>
         </template>
         <template #player>
-            <Player ref="playerComponent" :cards="handCards" :maxSelection="maxSelection"/>
+            <Player ref="playerComponent" :cards="handCards" :maxSelection="maxSelection" :seat-number="seatNumber"/>
         </template>
     </Layout>
 </template>
