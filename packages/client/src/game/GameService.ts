@@ -1,4 +1,4 @@
-import { ref, shallowRef, computed, ShallowRef } from 'vue';
+import { ref, shallowRef, computed, ShallowRef, provide, inject } from 'vue';
 import type { Card } from "@meeplit/shared/game";
 import {Ask,Player} from '@/game/views'
 import type { ChatMessage } from "@meeplit/shared/chat";
@@ -8,18 +8,19 @@ type PlayerInfo = {
     name?: string;
 };
 
-// 创建一个引用，且认为它被正确赋值
-function useCompRef<T extends new (...args: any) => any>(comp: T): ShallowRef<InstanceType<T>> {
-    return shallowRef(undefined!);
-}
+// 注入 key，仅注入 state，不注入 service
+export const GameStateKey: unique symbol = Symbol('GameState');
+export type GameState = ReturnType<typeof makeInitialState>;
+export type GameRefs = {
+    ask: ShallowRef<InstanceType<typeof Ask>>;
+    player: ShallowRef<InstanceType<typeof Player>>;
+};
 
 function makeInitialState() {
     // 先定义基础 ref，便于 computed 引用
     const gameInfo = ref('default game info text');
-    const playerComponent = useCompRef(Player);
     const handCards = ref<Card[]>([]);
     const maxSelection = ref<number>(0);
-    const inputComponent = useCompRef(Ask);
     const chatMessages = ref<ChatMessage[]>([]);
     const players = ref<Array<string | null>>([]);
     const playerInfo = ref<PlayerInfo>({ id: null, name: '' });
@@ -34,10 +35,8 @@ function makeInitialState() {
 
     return {
         gameInfo,
-        playerComponent,
         handCards,
         maxSelection,
-        inputComponent,
         chatMessages,
         players,
         playerInfo,
@@ -46,15 +45,28 @@ function makeInitialState() {
 }
 
 
-export function useGameService() {
-    const state= makeInitialState();
-    const gameService = new GameService(state);
-    return {state,gameService};
+// 获取已提供的 state，缺失时抛出友好错误
+export function useGameState(): GameState {
+    const state = inject<GameState>(GameStateKey, null!);
+    if (!state) throw new Error('GameState is not provided in current component tree');
+    return state;
+}
+
+export function useGameCtx() {
+    const gameState= makeInitialState();
+    const compRefs: GameRefs = {
+        ask: shallowRef<InstanceType<typeof Ask>>(undefined!),
+        player: shallowRef<InstanceType<typeof Player>>(undefined!),
+    };
+    // 提供全局可注入的游戏 state
+    provide(GameStateKey, gameState);
+    const gameService = new GameService(gameState, compRefs);
+    return {gameState, compRefs, gameService};
 }
 
 //必须在mount之后再调用方法
 export default class GameService {
-    constructor(private state:ReturnType<typeof makeInitialState>){}
+    constructor(private state:ReturnType<typeof makeInitialState>, private compRefs: GameRefs){}
     // --- RPC 服务接口实现 ---
     // 这些方法将被暴露给服务器调用
     public setGameInfo(text: string): void {
@@ -68,7 +80,7 @@ export default class GameService {
         columns?: number;
         defaultChoice: string;
     }): Promise<string> {
-        return this.state.inputComponent.value.getInput(options);
+        return this.compRefs.ask.value.getInput(options);
     }
 
     public ping(): string {
@@ -91,7 +103,7 @@ export default class GameService {
             出牌:computed(()=>this.getSelectedCards().length === options.cardnum), 
             取消:ref(true),
         }
-        const isplay = await this.state.inputComponent.value.getInput({
+        const isplay = await this.compRefs.ask.value.getInput({
             prompt: `请选择${options.cardnum}张牌`,
             choices:choices,
             timeoutMs: options.timeoutMs,
@@ -107,7 +119,7 @@ export default class GameService {
     }
 
     public getSelectedCards(): Card[] {
-        return this.state.playerComponent.value.getSelectedCards()
+        return this.compRefs.player.value?.getSelectedCards() ?? []
     }
 
     // --- 聊天：供服务器调用以新增消息 ---
@@ -122,7 +134,7 @@ export default class GameService {
     public setPlayerInfo(info: PlayerInfo): void {
         this.state.playerInfo.value = info;
         // 同步 Ability 显示的玩家名（图片保持默认或先前设置）
-        this.state.playerComponent.value?.setAbilityInfo(undefined, info.name || '');
+        this.compRefs.player.value?.setAbilityInfo(undefined, info.name || '');
     }
 }
 

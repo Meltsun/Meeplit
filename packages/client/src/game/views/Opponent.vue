@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useGameState } from '@/game/GameService';
 
-const props = defineProps<{
-    players: Array<string | null>;
-    currentPlayer: { id: string | null; name?: string } | null;
-}>();
+const gameState = useGameState();
 
 const opponentSlots = computed(() => {
-    const players = props.players ?? [];
+    const players = gameState.players.value ?? [];
     if (!players.length) return [] as Array<{ seat: number; id: string | null }>;
 
-    const currentId = props.currentPlayer?.id ?? null;
+    const currentId = gameState.playerInfo.value?.id ?? null;
     const currentSeat = currentId ? players.findIndex((id) => id === currentId) : -1;
     const seatCount = players.length;
 

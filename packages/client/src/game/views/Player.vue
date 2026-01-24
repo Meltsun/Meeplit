@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import {CardList} from '@/game/components';
-import type { Card } from '@meeplit/shared/game';
 import {resolveAssetUrl} from "@/game/utils";
-const props = defineProps<{
-    cards: Card[];
-    maxSelection?: number;
-    selectableCardIds?: Array<Card['id']>;
-    seatNumber?: number | string;
-}>();
+import { useGameState } from '@/game/GameService';
+
+const gameState = useGameState();
+const cards = gameState.handCards;
+const maxSelection = gameState.maxSelection;
+const seatNumber = gameState.seatNumber;
 
 const hoveredCardId = ref<string | null>(null);
 const selectedIndices = ref<number[]>([]);
@@ -18,12 +17,12 @@ const defaultAbilityImg = '/assets/未知卡牌.png';
 const abilityImageUrl = ref<string>(resolveAssetUrl(defaultAbilityImg).toString());
 const abilityPlayerName = ref<string>('');
 
-watch(() => props.maxSelection, () => {
+watch(() => maxSelection.value, () => {
     selectedIndices.value = [];
 });
 
 watch(
-    () => [props.cards, props.selectableCardIds],
+    () => cards.value,
     () => {
         selectedIndices.value = selectedIndices.value.filter((index) => isSelectableIndex(index));
     },
@@ -31,10 +30,8 @@ watch(
 );
 
 const isSelectableIndex = (index: number) => {
-    const card = props.cards[index];
-    if (!card) return false;
-    const allowedIds = props.selectableCardIds;
-    return allowedIds?.includes(card.id);
+    const card = cards.value[index];
+    return !!card;
 };
 
 const toggleSelection = (index: number) => {
@@ -43,7 +40,7 @@ const toggleSelection = (index: number) => {
     if (i > -1) {
         selectedIndices.value.splice(i, 1);
     } else {
-        if (props.maxSelection && selectedIndices.value.length >= props.maxSelection) {
+        if (maxSelection.value && selectedIndices.value.length >= maxSelection.value) {
             selectedIndices.value.shift();
         }
         selectedIndices.value.push(index);
@@ -52,7 +49,7 @@ const toggleSelection = (index: number) => {
 
 defineExpose({
     getSelectedCards: function () {
-        return selectedIndices.value.map((i) => props.cards[i]).filter(Boolean);
+        return selectedIndices.value.map((i) => cards.value[i]).filter(Boolean);
     },
     getHoveredCardId: function () {
         return hoveredCardId.value;
@@ -85,7 +82,7 @@ defineExpose({
             <CardList
                 :cards="cards"
                 :selected-indices="selectedIndices"
-                :selectable-card-ids="selectableCardIds"
+                :selectable-card-ids="undefined"
                 @toggle="toggleSelection"
                 @hover="hoveredCardId = $event"
                 @unhover="hoveredCardId = null"

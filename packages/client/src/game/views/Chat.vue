@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { ChatMessage } from '@meeplit/shared/chat'
+import { useGameState } from '@/game/GameService'
 
-const props = defineProps<{ messages: ChatMessage[] }>()
+const gameState = useGameState()
 const emit = defineEmits<{ (e: 'send', text: string): void }>()
 
 const inputText = ref('')
@@ -15,7 +15,7 @@ const showSystem = ref(true)
 
 const availablePlayers = computed(() => {
 	const names = new Set<string>()
-	for (const m of props.messages) {
+	for (const m of gameState.chatMessages.value) {
 		if (m.type === 'player') names.add(m.playerName)
 	}
 	return Array.from(names.values())
@@ -28,7 +28,7 @@ watch(availablePlayers, (players) => {
 }, { immediate: true })
 
 const filteredMessages = computed(() => {
-	return props.messages.filter((m) => {
+	return gameState.chatMessages.value.filter((m) => {
 		if (m.type === 'divider') return true
 		if (m.type === 'system') return showSystem.value
 		return selectedPlayers.value.has(m.playerName)

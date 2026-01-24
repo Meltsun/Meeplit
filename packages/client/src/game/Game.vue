@@ -3,7 +3,7 @@ import { onUnmounted, onMounted } from 'vue';
 
 import {Layout,GameInfo,Ask,Player,Board,Chat,Opponent} from '@/game/views'
 import { ConnectionManager } from '@/game/ConnectionManager';
-import {useGameService} from '@/game/GameService';
+import {useGameCtx} from '@/game/GameService';
 import {test} from '@/game/test'
 
 // 1. 初始化 service
@@ -14,22 +14,11 @@ const props = defineProps<{
     active?: boolean;
 }>();
 
-const {state,gameService} = useGameService();
+const {gameState, compRefs, gameService} = useGameCtx();
 
-// 2. 获取响应式状态以供模板使用
-// 直接解构 ref 对象是安全的，它们在模板中会自动解包
-const { 
-    gameInfo, 
-    handCards, 
-    maxSelection,
-    chatMessages,
-    players,
-    playerInfo,
-    seatNumber,
-    // 这里的 ref 将被绑定到模板中的组件
-    inputComponent,
-    playerComponent 
-} = state;
+// 组件模板 refs 由 Game.vue 自行管理与绑定（从 useGameCtx 返回的共享 shallowRef）
+const inputComponent = compRefs.ask;
+const playerComponent = compRefs.player;
 // 3. 初始化网络连接
 const manager = new ConnectionManager()
 
@@ -53,13 +42,13 @@ async function onSendChat(text: string){
 <template>
     <Layout>
         <template #gameInfo>
-            <GameInfo :text="gameInfo"/>
+            <GameInfo />
         </template>
         <template #chat>
-            <Chat :messages="chatMessages" @send="onSendChat"/>
+            <Chat @send="onSendChat"/>
         </template>
         <template #opponent>
-            <Opponent :players="players" :current-player="playerInfo" />
+            <Opponent />
         </template>
         <template #board>
             <Board>
@@ -72,7 +61,7 @@ async function onSendChat(text: string){
             </Board>
         </template>
         <template #player>
-            <Player ref="playerComponent" :cards="handCards" :maxSelection="maxSelection" :seat-number="seatNumber"/>
+            <Player ref="playerComponent" />
         </template>
     </Layout>
 </template>

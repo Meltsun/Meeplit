@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import MarkdownIt from 'markdown-it';
 import { computed } from 'vue';
+import { useGameState } from '@/game/GameService';
 
-interface Props {
-  text?: string
-}
-
-const {text = 'hello'} = defineProps<Props>()
+const gameState = useGameState();
 const markdown = new MarkdownIt({ linkify: true, breaks: true });
-const renderedMarkdown = computed(() => markdown.render(text || ''));
+const renderedMarkdown = computed(() => markdown.render(gameState.gameInfo.value || ''));
 
 </script>
 
