@@ -16,15 +16,7 @@
       </aside>
 
       <section class="flex flex-8 flex-col gap-2.5 overflow-hidden">
-        <div class="flex flex-[2.5] gap-2.5 overflow-hidden">
-          <slot name="opponent">
-            <div class="flex-1 bg-[#d6e4ff] text-[#6b7a99] overflow-hidden flex items-center justify-center">
-              等待对手
-            </div>
-          </slot>
-        </div>
-
-        <div class="flex flex-5 bg-[#f0f5ff] text-[#0f1d3a] overflow-hidden flex-col">
+        <div class="flex flex-[7.5] bg-[#f0f5ff] text-[#0f1d3a] overflow-hidden flex-col">
           <slot name="board">
             卡牌显示区域
           </slot>

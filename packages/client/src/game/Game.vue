@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { onUnmounted, onMounted } from 'vue';
 
-import {Layout,GameInfo,Ask,Player,Board,Chat,Opponent} from '@/game/views'
+import { Layout, GameInfo, Ask, Player, Board, Chat, Opponent } from '@/game/views';
 import { ConnectionManager } from '@/game/ConnectionManager';
-import {useGameCtx} from '@/game/GameService';
-import {test} from '@/game/test'
+import { useGameCtx } from '@/game/GameService';
 
 // 1. 初始化 service
 // 所有的游戏状态和逻辑现在都由 Controller 管理
@@ -14,15 +13,14 @@ const props = defineProps<{
     active?: boolean;
 }>();
 
-const {gameState, compRefs, gameService} = useGameCtx();
+const { gameState, compRefs, gameService } = useGameCtx();
 
 // 组件模板 refs 由 Game.vue 自行管理与绑定（从 useGameCtx 返回的共享 shallowRef）
 const inputComponent = compRefs.ask;
-const playerComponent = compRefs.player;
 // 3. 初始化网络连接
-const manager = new ConnectionManager()
+const manager = new ConnectionManager();
 
-onMounted(()=>{
+onMounted(() => {
     if (props.active !== false) {
         manager.connect(props.wsUrl, props.sessionId);
         // 直接暴露 Controller 实例上的公共方法
@@ -30,12 +28,12 @@ onMounted(()=>{
     }
 });
 
-onUnmounted(()=>{
+onUnmounted(() => {
     manager.disconnect();
 });
 
-async function onSendChat(text: string){
-    await manager.sendChatMessage(text)
+async function onSendChat(text: string) {
+    await manager.sendChatMessage(text);
 }
 </script>
 
@@ -45,23 +43,23 @@ async function onSendChat(text: string){
             <GameInfo />
         </template>
         <template #chat>
-            <Chat @send="onSendChat"/>
-        </template>
-        <template #opponent>
-            <Opponent />
+            <Chat @send="onSendChat" />
         </template>
         <template #board>
             <Board>
+                <template #opponent>
+                    <Opponent />
+                </template>
                 <template #cards>
                     <!-- 卡牌显示区域 -->
                 </template>
                 <template #ask>
-                    <Ask ref="inputComponent"/>
+                    <Ask ref="inputComponent" />
                 </template>
             </Board>
         </template>
         <template #player>
-            <Player ref="playerComponent" />
+            <Player />
         </template>
     </Layout>
 </template>

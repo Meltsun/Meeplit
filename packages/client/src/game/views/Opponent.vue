@@ -29,11 +29,11 @@ const opponentSlots = computed(() => {
 </script>
 
 <template>
-    <div class="flex flex-1 gap-2.5 overflow-hidden w-full h-full">
+    <div class="flex gap-2.5 overflow-hidden w-full h-full">
         <div
             v-for="slot in opponentSlots"
             :key="slot.seat"
-            class="relative flex-1 bg-[#d6e4ff] text-[#0f1d3a] overflow-hidden flex items-center justify-center"
+            class="relative w-32 text-[#0f1d3a] overflow-hidden flex items-center justify-center"
         >
             <span v-if="slot.id">玩家 {{ slot.id }}</span>
             <span v-else class="text-[#6b7a99]">空位</span>
@@ -43,7 +43,7 @@ const opponentSlots = computed(() => {
         </div>
         <div
             v-if="!opponentSlots.length"
-            class="flex-1 bg-[#d6e4ff] text-[#6b7a99] overflow-hidden flex items-center justify-center"
+            class="w-32 text-[#6b7a99] overflow-hidden flex items-center justify-center"
         >
             等待其他玩家加入
         </div>

@@ -7,17 +7,18 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "outDir": "./dist"
   },
   "references": [
     {
       "path": "../shared"
-    },
+    }
   ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "index.d.ts",
-    "**/*.vue",
+    "**/*.vue"
   ]
 }

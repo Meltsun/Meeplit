@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import {CardList} from '@/game/components';
-import {resolveAssetUrl} from "@/game/utils";
+import { CardList } from '@/game/components';
 import { useGameState } from '@/game/GameService';
 
 const gameState = useGameState();
 const cards = gameState.handCards;
 const maxSelection = gameState.maxSelection;
 const seatNumber = gameState.seatNumber;
+const selectedIndices = gameState.selectedIndices;
+const abilityImageUrl = gameState.abilityImageUrl;
+const abilityPlayerName = gameState.abilityPlayerName;
 
 const hoveredCardId = ref<string | null>(null);
-const selectedIndices = ref<number[]>([]);
-
-// Ability 展示数据（组件内状态，可通过 expose 方法修改）
-const defaultAbilityImg = '/assets/未知卡牌.png';
-const abilityImageUrl = ref<string>(resolveAssetUrl(defaultAbilityImg).toString());
-const abilityPlayerName = ref<string>('');
 
 watch(() => maxSelection.value, () => {
     selectedIndices.value = [];
@@ -46,19 +42,6 @@ const toggleSelection = (index: number) => {
         selectedIndices.value.push(index);
     }
 };
-
-defineExpose({
-    getSelectedCards: function () {
-        return selectedIndices.value.map((i) => cards.value[i]).filter(Boolean);
-    },
-    getHoveredCardId: function () {
-        return hoveredCardId.value;
-    },
-    setAbilityInfo: function (imageUrl?: string, playerName?: string) {
-        abilityImageUrl.value = resolveAssetUrl(imageUrl || defaultAbilityImg).toString();
-        abilityPlayerName.value = playerName || '';
-    },
-});
 </script>
 
 <template>

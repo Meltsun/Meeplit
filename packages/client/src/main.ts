@@ -1,12 +1,8 @@
-import { createApp} from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from 'vue'
 import Main from '@/Main.vue'
 import '@/main.css'
 
-const app = 
-	createApp(Main)
-	.use(createPinia())
-	.mount('#app')
+createApp(Main).mount('#app')
 
 // 动态缩放逻辑：根据窗口宽高比，计算缩放系数
 // 基础设计尺寸：1440×810 (16:9 宽高比)
