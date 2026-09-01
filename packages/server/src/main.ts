@@ -4,6 +4,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./env";
 import * as Cards from "./game";
 import Player from "./Player";
@@ -12,6 +15,8 @@ import RoomManager, { Room } from "./RoomManager";
 import AccountStore from "./AccountStore";
 
 import type GameService from "@meeplit/client"
+
+const SERVER_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 console.log('Server will bind WS on', WS_HOST, WS_PORT, 'ws-url', WS_URL);
 
@@ -31,7 +36,7 @@ const app = new Hono();
 
 app.use('*', cors());
 // app.use('/assets/*', cors({ origin: CLIENT_ORIGIN ?? '*', allowMethods: ['GET', 'HEAD', 'OPTIONS'] }));
-app.use('/assets/*', serveStatic({ root:"D:/Script/Meeplit/packages" }));
+app.use('/assets/*', serveStatic({ root: SERVER_ROOT }));
 
 // Managers
 const playerManager = new PlayerManager();
