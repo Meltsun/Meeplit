@@ -8,13 +8,12 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 
 import { CLIENT_ORIGIN, WS_HOST, WS_PORT, WS_URL } from "./env";
-import * as Cards from "./game";
-import Player from "./Player";
-import PlayerManager from "./PlayerManager";
-import RoomManager, { Room } from "./RoomManager";
-import AccountStore from "./AccountStore";
-
-import type GameService from "@meeplit/client"
+import PlayerManager from "./lobby/PlayerManager";
+import RoomManager from "./lobby/RoomManager";
+import AccountStore from "./lobby/AccountStore";
+import { registerLobbyRoutes } from "./lobby/routes";
+import { handleConnection } from "./lobby/connection";
+import { startRoomGame } from "./games/testcard";
 
 const SERVER_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -35,10 +34,9 @@ socketioServer.bind(engine);
 const app = new Hono();
 
 app.use('*', cors());
-// app.use('/assets/*', cors({ origin: CLIENT_ORIGIN ?? '*', allowMethods: ['GET', 'HEAD', 'OPTIONS'] }));
 app.use('/assets/*', serveStatic({ root: SERVER_ROOT }));
 
-// Managers
+// 依赖装配：局外管理器与 TestCard 游戏控制器
 const playerManager = new PlayerManager();
 const accounts = new AccountStore("./packages/server/data/accounts.db");
 const rooms = new RoomManager({
@@ -46,85 +44,12 @@ const rooms = new RoomManager({
     onAllReadyStart: (room) => startRoomGame(room),
 });
 
-// Health check
-app.get('/api/health', (c) => c.json({ ok: true, ws: WS_URL }));
+// 局外 HTTP 路由
+registerLobbyRoutes(app, { playerManager, accounts, rooms });
 
-// Login with account verification (SQLite)
-app.post('/api/login', async (c) => {
-    try {
-        const body = await c.req.json<{ name?: string; password?: string }>();
-        const name = (body.name ?? '').trim();
-        const password = (body.password ?? '').trim();
-        if (!name || !password) return c.json({ error: 'InvalidPayload' }, 400);
-
-        const account = accounts.verifyCredentials(name, password);
-        if (!account) return c.json({ error: 'InvalidCredentials' }, 401);
-
-        const player = playerManager.create(account.name);
-        // TODO: Set cookie instead of requiring header (hono/cookie)
-        return c.json({ sessionId: player.sessionId, user: { id: player.playerId, name: player.name } });
-    } catch {
-        return c.json({ error: 'InvalidPayload' }, 400);
-    }
-});
-
-// Who am I
-app.get('/api/me', (c) => {
-    const sid = c.req.header('x-session-id');
-    const player = playerManager.getBySession(sid ?? undefined);
-    if (!player) return c.json({ user: null });
-    return c.json({ user: { id: player.playerId, name: player.name }, roomId: player.roomId ?? null });
-});
-
-// List rooms
-app.get('/api/rooms', (c) => {
-    return c.json({ rooms: rooms.listSummaries() });
-});
-
-// Create room
-app.post('/api/rooms', async (c) => {
-    const sid = c.req.header('x-session-id');
-    const player = playerManager.getBySession(sid ?? undefined);
-    if (!player) return c.json({ error: 'Unauthorized' }, 401);
-    try {
-        const body = await c.req.json<{ name?: string,capacity:number }>();
-        const room = rooms.create(body.name, body.capacity ?? 4);
-        return c.json({ room: rooms.summaryOf(room) }, 201);
-    } catch {
-        return c.json({ error: 'InvalidPayload' }, 400);
-    }
-});
-
-// Join room (HTTP-level membership; RPC binding occurs on socket connection)
-app.post('/api/rooms/:id/join', async (c) => {
-    const sid = c.req.header('x-session-id');
-    const player = playerManager.getBySession(sid ?? undefined);
-    if (!player) return c.json({ error: 'Unauthorized' }, 401);
-    const id = c.req.param('id');
-    const joinRes = rooms.join(id, player);
-    if (!joinRes) return c.json({ error: 'RoomNotFound' }, 404);
-    // NOTE: RPC binding happens when the player connects the socket with this session.
-    return c.json({ ok: true, room: rooms.summaryOf(joinRes.room) });
-});
-
-// Mark ready within a room
-app.post('/api/rooms/:id/ready', async (c) => {
-    const sid = c.req.header('x-session-id');
-    const player = playerManager.getBySession(sid ?? undefined);
-    if (!player) return c.json({ error: 'Unauthorized' }, 401);
-    const id = c.req.param('id');
-    if (!player.client) return c.json({ error: 'SocketNotConnected' }, 400);
-    const { room } = rooms.markReady(id, player);
-    if (!room) return c.json({ error: 'RoomNotFound' }, 404);
-    return c.json({ ok: true, ready: room.ready.size, size: room.playersMap.size, state: room.state });
-});
-
-// Room state
-app.get('/api/rooms/:id/state', (c) => {
-    const id = c.req.param('id');
-    const room = rooms.get(id);
-    if (!room) return c.json({ error: 'RoomNotFound' }, 404);
-    return c.json({ room: rooms.summaryOf(room) });
+// socket.io 连接处理（反向 RPC 绑定、聊天、断线清理）
+socketioServer.on("connection", (socket) => {
+    handleConnection(socket, { playerManager, rooms });
 });
 
 const { websocket } = engine.handler();
@@ -141,89 +66,3 @@ Bun.serve({
     },
     websocket
 });
-
-socketioServer.on("connection", async (socket) => {
-    console.log("Reverse RPC client connected", socket.id);
-    // Bind session via socket.io auth or query
-    const sid = (socket.handshake.auth as any)?.sessionId
-        ?? (socket.handshake.query as any)?.sessionId;
-
-    const newPlayer = playerManager.addPlayer(sid, socket);
-    if (newPlayer && newPlayer.roomId) {
-        const room = rooms.get(newPlayer.roomId);
-        if (room) {
-            if (newPlayer.seatIndex !== undefined && !room.playersMap.has(newPlayer.seatIndex)) {
-                room.playersMap.set(newPlayer.seatIndex, newPlayer);
-            }
-
-            const playersSnapshot = buildPlayersArray(room);
-
-            newPlayer.client?.emit().setPlayerInfo({
-                id: newPlayer.playerId,
-                name: newPlayer.name,
-            })
-
-            socket.on("chat", (message: string,ack) => {
-                console.log("收到聊天消息:", message);
-                for(const p of room.playersMap.values()){
-                    p.client?.emit().addChatMessage(
-                        {
-                            type: "player",
-                            playerId: newPlayer.playerId,
-                            playerName: newPlayer.name,
-                            text: message,
-                            timeStamp: Date.now(),
-                        }
-                    )
-                }
-            })
-
-            for(const p of room.playersMap.values()){
-                p.client?.emitBatch("sequential",(stub)=>{
-                    stub.addChatMessage(
-                        {
-                            type: "system",
-                            text: `${newPlayer.name} 加入了房间`,
-                            timeStamp: Date.now(),
-                        }
-                    )
-                    stub.setPlayers(playersSnapshot);
-                    stub.updateCard([new Cards.UnknownCard(),new Cards.TestCard()])
-                })
-            }
-        }
-    }
-
-    socket.on("disconnect", () => {
-        const p = playerManager.unbindSocket(socket);
-        if (!p) return;
-        const { room } = rooms.cleanupOnDisconnect(p);
-        if (room) {
-            const playersSnapshot = buildPlayersArray(room);
-            for (const other of room.playersMap.values()) {
-                other.client?.emit().setPlayers(playersSnapshot);
-            }
-        }
-    });
-});
-
-// Example room game loop (skeleton)
-// NOTE: This demonstrates per-room control using RPC; adapt to your game.
-async function startRoomGame(room: Room) {
-    // TODO: Implement actual room-scoped game controller
-    // - Deal cards per player
-    // - Drive turns
-    // - Handle timeouts and round transitions
-    const sampleCards = [new Cards.TestCard(), new Cards.TestCard(), new Cards.TestCard()];
-    for (const player of room.playersMap.values()) {
-        player.client?.emit().setGameInfo(`开始游戏${room.id}`)
-    }
-}
-
-function buildPlayersArray(room: Room): Array<string | null> {
-    const arr = Array<string | null>(room.capacity).fill(null);
-    for (const [seat, player] of room.playersMap.entries()) {
-        arr[seat] = player.playerId;
-    }
-    return arr;
-}

@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io";
-import { RemoteClient } from "./playerClient";
+import { RemoteClient } from "../game/playerClient";
 import type GameService from "@meeplit/client";
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { RemoteClient } from "../src/playerClient";
+import { RemoteClient } from "../src/game/playerClient";
 import type { RpcRequest, RpcRequestMeta } from "@meeplit/shared/rpc";
 
 type EmitWithAck = (event: string, payload: RpcRequest, meta: RpcRequestMeta) => Promise<any>;

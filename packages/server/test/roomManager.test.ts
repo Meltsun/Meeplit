@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "bun:test";
-import Player from "../src/Player";
-import RoomManager from "../src/RoomManager";
+import Player from "../src/lobby/Player";
+import RoomManager from "../src/lobby/RoomManager";
 
 describe("RoomManager", () => {
     test("creates rooms with defaults and enforces capacity floor", () => {

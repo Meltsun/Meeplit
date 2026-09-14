@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
-import AccountStore from "../src/AccountStore";
+import AccountStore from "../src/lobby/AccountStore";
 
 let tmpDir: string;
 let store: AccountStore | undefined;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import Player from "../src/Player";
-import PlayerManager from "../src/PlayerManager";
+import Player from "../src/lobby/Player";
+import PlayerManager from "../src/lobby/PlayerManager";
 
 const createSocketStub = () => {
     const socket = {
@@ -21,7 +21,7 @@ const createSocketStub = () => {
 describe("Player", () => {
     test("tracks room membership and readiness", () => {
         const player = new Player({ playerId: "p1", sessionId: "s1", name: "neo" });
-        player.joinRoom("room-a");
+        player.joinRoom("room-a", 0);
         expect(player.roomId).toBe("room-a");
         expect(player.ready).toBe(false);
 
